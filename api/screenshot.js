@@ -21,6 +21,26 @@ async function loadFonts() {
   }
 }
 
+// دالة تقسيم النص وتلفيفه تلقائياً لأسطر متعددة (Word Wrap)
+function wrapText(ctx, text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = words[0] || '';
+
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    const width = ctx.measureText(currentLine + ' ' + word).width;
+    if (width < maxWidth) {
+      currentLine += ' ' + word;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  lines.push(currentLine);
+  return lines;
+}
+
 // خريطة الألوان المطابقة للسكربت في تصميمك
 const colorMap = {
   'وردي فاتح': '#f8bbd0', 'ذهبي': '#d4b46a', 'فضي': '#c0c0c0',
@@ -74,12 +94,12 @@ export default async function handler(req, res) {
   data = { ...req.query, ...data };
 
   const shein = data.shein || '-';
-  const title = (data.title || 'منتج شي إن').slice(0, 150);
+  const title = (data.title || 'منتج شي إن').trim();
   const price = data.reply || data.price || '-';
   const sizes = data.sizes || '-';
   const colorsText = data.colors || '';
   const attributesText = data.attributes || '';
-  const imageUrl = data.imageUrl || (data.file_id ? `https://html-to-image-api-six.vercel.app/telegram_image.php?file_id=${data.file_id}` : '');
+  let imageUrl = data.imageUrl || (data.file_id ? `https://html-to-image-api-six.vercel.app/telegram_image.php?file_id=${data.file_id}` : '');
 
   try {
     // 1. إعداد دقة الكانفاس بـ Scale 2 لضمان الوضوح العالي (1400x1200)
@@ -156,10 +176,32 @@ export default async function handler(req, res) {
     ctx.fillStyle = '#e9e7e2';
     ctx.fillRect(imgX, imgY, imgW, imgH);
 
+    // جلب الصورة بأمان وتحويل AVIF إلى JPG تلقائياً
     if (imageUrl) {
       try {
-        const img = await loadImage(imageUrl);
-        drawImageCover(ctx, img, imgX, imgY, imgW, imgH);
+        const cleanImageUrl = imageUrl
+          .replace(/\.avif(\?.*)?$/i, '.jpg$1')
+          .replace(/_thumbnail_\d+x\d*/i, '_thumbnail_450x');
+
+        const imgRes = await fetch(cleanImageUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          }
+        });
+
+        if (imgRes.ok) {
+          const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
+          const img = await loadImage(imgBuffer);
+          drawImageCover(ctx, img, imgX, imgY, imgW, imgH);
+        } else {
+          // تجربة الرابط الأصلي كاحتياط
+          const fallbackRes = await fetch(imageUrl);
+          if (fallbackRes.ok) {
+            const imgBuffer = Buffer.from(await fallbackRes.arrayBuffer());
+            const img = await loadImage(imgBuffer);
+            drawImageCover(ctx, img, imgX, imgY, imgW, imgH);
+          }
+        }
       } catch (err) {
         console.error('خطأ جلب الصورة:', err.message);
       }
@@ -174,23 +216,32 @@ export default async function handler(req, res) {
     const rightMargin = baseW - 18; // 682px
     const boxW = 244;
     const boxX = rightMargin - boxW;
-    let currentY = 68 + 20;
+    let currentY = 68 + 18;
 
     ctx.textAlign = 'right';
 
-    // عنوان المنتج
+    // 🔴 عنوان المنتج (مع التجميع والتكفيل التلقائي بالأسطر)
     ctx.fillStyle = '#161616';
-    ctx.font = `600 14px ${fontBold}`;
-    ctx.fillText(title, rightMargin, currentY + 12);
-    currentY += 25;
+    ctx.font = `600 13px ${fontBold}`;
+
+    // تقسيم النص لأسطر تتناسب مع عرض الصندوق (boxW = 244px)
+    const titleLines = wrapText(ctx, title, boxW).slice(0, 3); // أقصى حد 3 سطور
+
+    let titleY = currentY + 12;
+    titleLines.forEach((line) => {
+      ctx.fillText(line, rightMargin, titleY);
+      titleY += 18;
+    });
+
+    currentY = titleY + 4;
 
     // الخط الذهبي
     ctx.fillStyle = '#d4b46a';
     ctx.fillRect(rightMargin - 45, currentY, 45, 3);
-    currentY += 18;
+    currentY += 14;
 
     // صندوق السعر
-    const priceBoxH = 65;
+    const priceBoxH = 60;
     ctx.fillStyle = '#111111';
     ctx.beginPath();
     ctx.roundRect(boxX, currentY, boxW, priceBoxH, 14);
@@ -198,21 +249,21 @@ export default async function handler(req, res) {
 
     ctx.fillStyle = '#aaaaaa';
     ctx.font = `400 10px ${fontReg}`;
-    ctx.fillText('السعر', rightMargin - 15, currentY + 20);
+    ctx.fillText('السعر', rightMargin - 15, currentY + 18);
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = `900 26px ${fontBold}`;
-    ctx.fillText(String(price), rightMargin - 15, currentY + 50);
+    ctx.font = `900 24px ${fontBold}`;
+    ctx.fillText(String(price), rightMargin - 15, currentY + 46);
 
     const priceTextW = ctx.measureText(String(price)).width;
     ctx.fillStyle = '#d4b46a';
     ctx.font = `600 12px ${fontBold}`;
-    ctx.fillText('ل.س', rightMargin - 20 - priceTextW, currentY + 50);
+    ctx.fillText('ل.س', rightMargin - 20 - priceTextW, currentY + 46);
 
-    currentY += priceBoxH + 13;
+    currentY += priceBoxH + 10;
 
     // صندوق المقاسات
-    const sizeBoxH = 48;
+    const sizeBoxH = 46;
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#e6e3dc';
     ctx.lineWidth = 1;
@@ -223,17 +274,17 @@ export default async function handler(req, res) {
 
     ctx.fillStyle = '#999999';
     ctx.font = `400 9px ${fontReg}`;
-    ctx.fillText('المقاسات المتوفرة', rightMargin - 11, currentY + 18);
+    ctx.fillText('المقاسات المتوفرة', rightMargin - 11, currentY + 16);
 
     ctx.fillStyle = '#222222';
     ctx.font = `800 12px ${fontBold}`;
-    ctx.fillText(String(sizes), rightMargin - 11, currentY + 36);
+    ctx.fillText(String(sizes), rightMargin - 11, currentY + 34);
 
-    currentY += sizeBoxH + 9;
+    currentY += sizeBoxH + 8;
 
     // صندوق الألوان (مع دوائر الألوان)
     const hasColors = colorsText && colorsText !== 'لون واحد' && colorsText !== 'غير متوفر';
-    const colorBoxH = hasColors ? 68 : 48;
+    const colorBoxH = hasColors ? 64 : 46;
 
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
@@ -243,12 +294,12 @@ export default async function handler(req, res) {
 
     ctx.fillStyle = '#888888';
     ctx.font = `600 8px ${fontReg}`;
-    ctx.fillText('الألوان المتوفرة', rightMargin - 11, currentY + 16);
+    ctx.fillText('الألوان المتوفرة', rightMargin - 11, currentY + 15);
 
     if (hasColors) {
       const colorsList = colorsText.split('-').map(x => x.trim()).filter(Boolean);
       let dotX = rightMargin - 22;
-      const dotY = currentY + 32;
+      const dotY = currentY + 30;
 
       // رسم دوائر الألوان
       colorsList.forEach(name => {
@@ -258,10 +309,9 @@ export default async function handler(req, res) {
         ctx.save();
         ctx.fillStyle = hex;
         ctx.beginPath();
-        ctx.arc(dotX, dotY, 9, 0, Math.PI * 2);
+        ctx.arc(dotX, dotY, 8, 0, Math.PI * 2);
         ctx.fill();
 
-        // إطار أبيض وحلقة رمادية
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
         ctx.stroke();
@@ -271,25 +321,25 @@ export default async function handler(req, res) {
         ctx.stroke();
         ctx.restore();
 
-        dotX -= 24;
+        dotX -= 22;
       });
 
       // أسماء الألوان أسفل الدوائر
       ctx.fillStyle = '#888888';
       ctx.font = `600 8px ${fontReg}`;
-      ctx.fillText(colorsText, rightMargin - 11, currentY + 56);
+      ctx.fillText(colorsText, rightMargin - 11, currentY + 52);
     } else {
       ctx.fillStyle = '#222222';
       ctx.font = `800 12px ${fontBold}`;
-      ctx.fillText(colorsText || '-', rightMargin - 11, currentY + 36);
+      ctx.fillText(colorsText || '-', rightMargin - 11, currentY + 34);
     }
 
-    currentY += colorBoxH + 9;
+    currentY += colorBoxH + 8;
 
     // صندوق التفاصيل (ATTRIBUTES BOX)
     if (attributesText) {
       const lines = attributesText.split(/\r\n|\r|\n/).map(x => x.trim().replace(/^•\s*/, '')).filter(Boolean);
-      const attrBoxH = 25 + (lines.length * 18);
+      const attrBoxH = 22 + (lines.length * 16);
 
       ctx.fillStyle = '#eeece6';
       ctx.beginPath();
@@ -298,9 +348,9 @@ export default async function handler(req, res) {
 
       ctx.fillStyle = '#222222';
       ctx.font = `900 10px ${fontBold}`;
-      ctx.fillText('تفاصيل المنتج', rightMargin - 12, currentY + 18);
+      ctx.fillText('تفاصيل المنتج', rightMargin - 12, currentY + 16);
 
-      let lineY = currentY + 34;
+      let lineY = currentY + 30;
       ctx.font = `400 9px ${fontReg}`;
       ctx.fillStyle = '#666666';
 
@@ -314,17 +364,17 @@ export default async function handler(req, res) {
           ctx.lineTo(boxX + 12, lineY + 4);
           ctx.stroke();
         }
-        lineY += 18;
+        lineY += 16;
       });
     }
 
     // الفوتر (FOOTER)
-    const footerY = baseH - 22;
+    const footerY = baseH - 20;
     ctx.strokeStyle = '#ddd9d0';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(boxX, footerY - 14);
-    ctx.lineTo(rightMargin, footerY - 14);
+    ctx.moveTo(boxX, footerY - 12);
+    ctx.lineTo(rightMargin, footerY - 12);
     ctx.stroke();
 
     // Brand
