@@ -1,4 +1,4 @@
-import chromium from '@sparticuz/chromium';
+import chromium from '@sparticuz/chromium-min';
 import puppeteer from 'puppeteer-core';
 
 export default async function handler(req, res) {
@@ -77,7 +77,7 @@ export default async function handler(req, res) {
   `;
 
   try {
-    // جلب الحزمة الكاملة الشاملة لمكتبة libnss3.so وباقي مكتبات النظام
+    // جلب ملف المتصفح الشامل مع جميع المكتبات الناقصة
     const executablePath = await chromium.executablePath(
       'https://github.com/sparticuz/chromium/releases/download/v126.0.0/chromium-v126.0.0-pack.tar'
     );
@@ -92,13 +92,13 @@ export default async function handler(req, res) {
     const page = await browser.newPage();
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
 
-    const imageBuffer = await page.screenshot({ type: 'jpeg', quality: 90 });
+    const imageBuffer = await page.screenshot({ type: 'jpeg', quality: 85 });
     await browser.close();
 
     res.setHeader('Content-Type', 'image/jpeg');
     return res.status(200).send(imageBuffer);
 
   } catch (error) {
-    return res.status(500).send(error.message);
+    return res.status(500).json({ error: error.message, stack: error.stack });
   }
 }
