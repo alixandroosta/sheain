@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
-    "@sparticuz/chromium": "^131.0.0",
-    "puppeteer-core": "^23.0.0"
+    "@napi-rs/canvas": "^0.1.52"
   }
 }
