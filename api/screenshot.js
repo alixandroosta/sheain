@@ -1,108 +1,136 @@
-import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
+import { createCanvas, loadImage } from '@napi-rs/canvas';
 
 export default async function handler(req, res) {
   const data = req.method === 'POST' ? req.body : req.query;
-  const shein = data?.shein || '';
-  const title = data?.title || '';
-  const price = data?.price || '';
-  const sizes = data?.sizes || '';
-  const colors = data?.colors || '';
+  const shein = data?.shein || '-';
+  const title = data?.title || 'منتج شي إن';
+  const price = data?.price || '-';
+  const sizes = data?.sizes || '-';
+  const colors = data?.colors || '-';
   const imageUrl = data?.imageUrl || '';
 
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html lang="ar" dir="rtl">
-    <head>
-      <meta charset="UTF-8">
-      <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-      <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; background: #f8f7f3; width: 700px; height: 600px; display: flex; flex-direction: column; }
-        .card-header { height: 68px; padding: 0 25px; display: flex; align-items: center; justify-content: space-between; background: #111; color: white; }
-        .logo { font-size: 21px; font-weight: 900; }
-        .logo span { color: #d4b46a; }
-        .header-label { font-size: 18px; font-weight: 600; border: 1px solid #555; border-radius: 30px; padding: 6px 12px; }
-        .main { height: calc(100% - 68px); display: flex; direction: ltr; }
-        .image-side { width: 410px; height: 100%; padding: 16px; flex-shrink: 0; }
-        .image-container { width: 100%; height: 100%; background: #e9e7e2; }
-        .image-container img { width: 100%; height: 100%; object-fit: cover; }
-        .info-side { flex: 1; direction: rtl; padding: 20px 18px; display: flex; flex-direction: column; justify-content: space-between; }
-        .product-title { font-size: 14px; font-weight: 600; color: #161616; }
-        .gold-line { width: 45px; height: 3px; background: #d4b46a; margin: 8px 0 18px 0; }
-        .price-box { background: #111; color: white; padding: 13px 15px; border-radius: 14px; }
-        .price { font-size: 28px; font-weight: 900; }
-        .currency { color: #d4b46a; font-size: 12px; }
-        .detail { background: white; border: 1px solid #e6e3dc; border-radius: 12px; padding: 9px 11px; margin-top: 10px; }
-        .detail-value { font-weight: 800; font-size: 12px; }
-        .footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd9d0; padding-top: 8px; }
-      </style>
-    </head>
-    <body>
-      <div class="card-header">
-        <div class="logo">Syria <span>•</span> SheIn</div>
-        <div class="header-label">${shein || '-'}</div>
-      </div>
-      <div class="main">
-        <div class="image-side">
-          <div class="image-container">
-            <img src="${imageUrl}" alt="Product">
-          </div>
-        </div>
-        <div class="info-side">
-          <div>
-            <div class="product-title">${title || 'منتج شي إن'}</div>
-            <div class="gold-line"></div>
-            <div class="price-box">
-              <div style="font-size:10px; color:#aaa;">السعر</div>
-              <div class="price">${price || '-'} <span class="currency">ل.س</span></div>
-            </div>
-            <div class="detail">
-              <div style="font-size:9px; color:#999;">المقاسات</div>
-              <div class="detail-value">${sizes || '-'}</div>
-            </div>
-            <div class="detail">
-              <div style="font-size:9px; color:#999;">الألوان</div>
-              <div class="detail-value">${colors || '-'}</div>
-            </div>
-          </div>
-          <div class="footer">
-            <div style="font-weight:900; font-size:11px;">SheIn <span>•</span> Syria</div>
-            <div style="font-size:8px; color:#999;">اطلبها بسهولة واستلمها عندك</div>
-          </div>
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
-
   try {
-    // إيقاف نمط الجرافيكس لإلغاء الاعتماد على مكتبات النظام مثل libnss3
-    chromium.setGraphicsMode = false;
+    const width = 700;
+    const height = 600;
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext('2d');
 
-    const browser = await puppeteer.launch({
-      args: [
-        ...chromium.args,
-        '--disable-gpu',
-        '--disable-dev-shm-usage',
-        '--single-process',
-        '--no-sandbox',
-      ],
-      defaultViewport: { width: 700, height: 600 },
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-    });
+    // 1. الخلفية العامة
+    ctx.fillStyle = '#f8f7f3';
+    ctx.fillRect(0, 0, width, height);
 
-    const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
+    // 2. الهيدر العلوي (Black Header)
+    ctx.fillStyle = '#111111';
+    ctx.fillRect(0, 0, width, 68);
 
-    const imageBuffer = await page.screenshot({ type: 'jpeg', quality: 85 });
-    await browser.close();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('Syria • SheIn', 25, 42);
+
+    ctx.fillStyle = '#d4b46a';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(shein, width - 25, 42);
+    ctx.textAlign = 'left';
+
+    // 3. منطقة صورة المنتج (الجانب الأيسر)
+    const imgX = 16;
+    const imgY = 68 + 16;
+    const imgW = 380;
+    const imgH = height - 68 - 32;
+
+    ctx.fillStyle = '#e9e7e2';
+    ctx.fillRect(imgX, imgY, imgW, imgH);
+
+    if (imageUrl) {
+      try {
+        const img = await loadImage(imageUrl);
+        ctx.drawImage(img, imgX, imgY, imgW, imgH);
+      } catch (err) {
+        // في حال تعثر تحميل رابط الصورة المباشر
+      }
+    }
+
+    // 4. منطقة التفاصيل (الجانب الأيمن)
+    const infoX = 420;
+    let currentY = 110;
+
+    // العنوان
+    ctx.fillStyle = '#161616';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillText(title.substring(0, 30), infoX, currentY);
+
+    // الخط الذهبي
+    currentY += 12;
+    ctx.fillStyle = '#d4b46a';
+    ctx.fillRect(infoX, currentY, 45, 3);
+
+    // مربع السعر
+    currentY += 25;
+    ctx.fillStyle = '#111111';
+    ctx.beginPath();
+    ctx.roundRect(infoX, currentY, 255, 75, 14);
+    ctx.fill();
+
+    ctx.fillStyle = '#aaaaaa';
+    ctx.font = '12px sans-serif';
+    ctx.fillText('السعر', infoX + 15, currentY + 25);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.fillText(`${price} `, infoX + 15, currentY + 58);
+
+    ctx.fillStyle = '#d4b46a';
+    ctx.font = '14px sans-serif';
+    ctx.fillText('ل.س', infoX + 180, currentY + 58);
+
+    // مربع المقاسات
+    currentY += 90;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#e6e3dc';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(infoX, currentY, 255, 52, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#999999';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('المقاسات', infoX + 12, currentY + 20);
+
+    ctx.fillStyle = '#111111';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillText(sizes, infoX + 12, currentY + 40);
+
+    // مربع الألوان
+    currentY += 62;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.roundRect(infoX, currentY, 255, 52, 12);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#999999';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('الألوان', infoX + 12, currentY + 20);
+
+    ctx.fillStyle = '#111111';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillText(colors, infoX + 12, currentY + 40);
+
+    // الفوتر
+    currentY += 75;
+    ctx.fillStyle = '#111111';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillText('SheIn • Syria', infoX, currentY);
+
+    // استخراج الصورة وتصديرها
+    const imageBuffer = canvas.toBuffer('image/jpeg');
 
     res.setHeader('Content-Type', 'image/jpeg');
     return res.status(200).send(imageBuffer);
 
   } catch (error) {
-    return res.status(500).json({ error: error.message, stack: error.stack });
+    return res.status(500).json({ error: error.message });
   }
 }
