@@ -77,13 +77,15 @@ export default async function handler(req, res) {
   `;
 
   try {
-    // إيقاف نمط الرسوميات لمنع الاعتماد على مكتبات النظام الناقصة
-    chromium.setGraphicsMode = false;
+    // جلب الحزمة الكاملة الشاملة لمكتبة libnss3.so وباقي مكتبات النظام
+    const executablePath = await chromium.executablePath(
+      'https://github.com/sparticuz/chromium/releases/download/v126.0.0/chromium-v126.0.0-pack.tar'
+    );
 
     const browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: { width: 700, height: 600 },
-      executablePath: await chromium.executablePath(),
+      executablePath,
       headless: chromium.headless,
     });
 
