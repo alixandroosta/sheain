@@ -1,4 +1,4 @@
-import chromium from '@sparticuz/chromium-min';
+import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 
 export default async function handler(req, res) {
@@ -77,20 +77,24 @@ export default async function handler(req, res) {
   `;
 
   try {
-    // جلب ملف المتصفح الشامل مع جميع المكتبات الناقصة
-    const executablePath = await chromium.executablePath(
-      'https://github.com/sparticuz/chromium/releases/download/v126.0.0/chromium-v126.0.0-pack.tar'
-    );
+    // إيقاف نمط الجرافيكس لإلغاء الاعتماد على مكتبات النظام مثل libnss3
+    chromium.setGraphicsMode = false;
 
     const browser = await puppeteer.launch({
-      args: chromium.args,
+      args: [
+        ...chromium.args,
+        '--disable-gpu',
+        '--disable-dev-shm-usage',
+        '--single-process',
+        '--no-sandbox',
+      ],
       defaultViewport: { width: 700, height: 600 },
-      executablePath,
+      executablePath: await chromium.executablePath(),
       headless: chromium.headless,
     });
 
     const page = await browser.newPage();
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+    await page.setContent(htmlContent, { waitUntil: 'domcontentloaded' });
 
     const imageBuffer = await page.screenshot({ type: 'jpeg', quality: 85 });
     await browser.close();
