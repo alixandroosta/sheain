@@ -1,13 +1,31 @@
 import { createCanvas, loadImage } from '@napi-rs/canvas';
 
 export default async function handler(req, res) {
-  const data = req.method === 'POST' ? req.body : req.query;
-  const shein = data?.shein || '-';
-  const title = data?.title || 'منتج شي إن';
-  const price = data?.price || '-';
-  const sizes = data?.sizes || '-';
-  const colors = data?.colors || '-';
-  const imageUrl = data?.imageUrl || '';
+  // 1. استخراج البيانات بدقة سواء كانت من GET أو POST أو JSON خام
+  let data = {};
+
+  try {
+    if (req.body) {
+      if (typeof req.body === 'string') {
+        data = JSON.parse(req.body);
+      } else if (typeof req.body === 'object') {
+        data = req.body;
+      }
+    }
+  } catch (e) {
+    // في حال عدم إمكانية فك تفكيك JSON
+  }
+
+  // دمج مع متغيرات الرابط GET لضمان القراءة دائماً
+  data = { ...req.query, ...data };
+
+  // استخراج القيم مع دعم المسميات المختلفة
+  const shein = data.shein || data.code || '-';
+  const title = data.title || data.name || 'منتج شي إن';
+  const price = data.price || '-';
+  const sizes = data.sizes || '-';
+  const colors = data.colors || '-';
+  const imageUrl = data.imageUrl || data.image || data.img || '';
 
   try {
     const width = 700;
@@ -15,11 +33,11 @@ export default async function handler(req, res) {
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext('2d');
 
-    // 1. الخلفية العامة
+    // الخلفية العامة
     ctx.fillStyle = '#f8f7f3';
     ctx.fillRect(0, 0, width, height);
 
-    // 2. الهيدر العلوي (Black Header)
+    // الهيدر العلوي
     ctx.fillStyle = '#111111';
     ctx.fillRect(0, 0, width, 68);
 
@@ -30,10 +48,10 @@ export default async function handler(req, res) {
     ctx.fillStyle = '#d4b46a';
     ctx.font = 'bold 16px sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText(shein, width - 25, 42);
+    ctx.fillText(String(shein), width - 25, 42);
     ctx.textAlign = 'left';
 
-    // 3. منطقة صورة المنتج (الجانب الأيسر)
+    // منطقة الصورة (الجانب الأيسر)
     const imgX = 16;
     const imgY = 68 + 16;
     const imgW = 380;
@@ -47,18 +65,18 @@ export default async function handler(req, res) {
         const img = await loadImage(imageUrl);
         ctx.drawImage(img, imgX, imgY, imgW, imgH);
       } catch (err) {
-        // في حال تعثر تحميل رابط الصورة المباشر
+        console.error('فشل تحميل الصورة:', err.message);
       }
     }
 
-    // 4. منطقة التفاصيل (الجانب الأيمن)
+    // منطقة التفاصيل (الجانب الأيمن)
     const infoX = 420;
     let currentY = 110;
 
     // العنوان
     ctx.fillStyle = '#161616';
     ctx.font = 'bold 15px sans-serif';
-    ctx.fillText(title.substring(0, 30), infoX, currentY);
+    ctx.fillText(String(title).substring(0, 32), infoX, currentY);
 
     // الخط الذهبي
     currentY += 12;
@@ -100,7 +118,7 @@ export default async function handler(req, res) {
 
     ctx.fillStyle = '#111111';
     ctx.font = 'bold 13px sans-serif';
-    ctx.fillText(sizes, infoX + 12, currentY + 40);
+    ctx.fillText(String(sizes), infoX + 12, currentY + 40);
 
     // مربع الألوان
     currentY += 62;
@@ -116,7 +134,7 @@ export default async function handler(req, res) {
 
     ctx.fillStyle = '#111111';
     ctx.font = 'bold 13px sans-serif';
-    ctx.fillText(colors, infoX + 12, currentY + 40);
+    ctx.fillText(String(colors), infoX + 12, currentY + 40);
 
     // الفوتر
     currentY += 75;
