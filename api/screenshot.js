@@ -2,7 +2,6 @@ import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 
 export default async function handler(req, res) {
-  // 1. قراءة البيانات المباشرة من GET أو POST
   const data = req.method === 'POST' ? req.body : req.query;
   const shein = data?.shein || '';
   const title = data?.title || '';
@@ -11,7 +10,6 @@ export default async function handler(req, res) {
   const colors = data?.colors || '';
   const imageUrl = data?.imageUrl || '';
 
-  // 2. كود الـ HTML داخل قالب نصي مغلق
   const htmlContent = `
     <!DOCTYPE html>
     <html lang="ar" dir="rtl">
@@ -79,6 +77,9 @@ export default async function handler(req, res) {
   `;
 
   try {
+    // إيقاف نمط الرسوميات لمنع الاعتماد على مكتبات النظام الناقصة
+    chromium.setGraphicsMode = false;
+
     const browser = await puppeteer.launch({
       args: chromium.args,
       defaultViewport: { width: 700, height: 600 },
