@@ -2,15 +2,17 @@ import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 
 export default async function handler(req, res) {
-  // استقبال البيانات الممررة من سيرفرك
-  const { shein, title, price, sizes, colors, attributes, imageUrl } = req.body || req.query;
+  // 1. قراءة البيانات المباشرة من GET أو POST
+  const data = req.method === 'POST' ? req.body : req.query;
+  const shein = data?.shein || '';
+  const title = data?.title || '';
+  const price = data?.price || '';
+  const sizes = data?.sizes || '';
+  const colors = data?.colors || '';
+  const imageUrl = data?.imageUrl || '';
 
-  if (!shein && !title) {
-    return res.status(400).send('Product details are required');
-  }
-
-  // 1. بناء هيكل الـ HTML و CSS بالبيانات الممررة مباشرة
-  const htmlContent = 
+  // 2. كود الـ HTML داخل قالب نصي مغلق
+  const htmlContent = `
     <!DOCTYPE html>
     <html lang="ar" dir="rtl">
     <head>
@@ -46,7 +48,7 @@ export default async function handler(req, res) {
       <div class="main">
         <div class="image-side">
           <div class="image-container">
-            <img src="${imageUrl || ''}" alt="Product Image">
+            <img src="${imageUrl}" alt="Product">
           </div>
         </div>
         <div class="info-side">
@@ -74,7 +76,7 @@ export default async function handler(req, res) {
       </div>
     </body>
     </html>
-  ;
+  `;
 
   try {
     const browser = await puppeteer.launch({
@@ -83,12 +85,10 @@ export default async function handler(req, res) {
       executablePath: await chromium.executablePath(),
       headless: chromium.headless,
     });
+
     const page = await browser.newPage();
-    
-    // حقن HTML المبنّي مباشرة في المتصفح الوهمي
     await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
 
-    // التقاط الصورة
     const imageBuffer = await page.screenshot({ type: 'jpeg', quality: 90 });
     await browser.close();
 
