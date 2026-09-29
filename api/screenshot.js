@@ -99,7 +99,7 @@ export default async function handler(req, res) {
   const sizes = data.sizes || '-';
   const colorsText = data.colors || '';
   const attributesText = data.attributes || '';
-  let imageUrl = data.imageUrl || (data.file_id ? `https://html-to-image-api-six.vercel.app/telegram_image.php?file_id=${data.file_id}` : '');
+  let imageUrl = data.file_id || '';
 
   try {
     // 1. إعداد دقة الكانفاس بـ Scale 2 لضمان الوضوح العالي (1400x1200)
