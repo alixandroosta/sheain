@@ -220,12 +220,11 @@ export default async function handler(req, res) {
 
     ctx.textAlign = 'right';
 
-    // 🔴 عنوان المنتج (مع التجميع والتكفيل التلقائي بالأسطر)
+    // عنوان المنتج (التكفيل التلقائي بالأسطر)
     ctx.fillStyle = '#161616';
     ctx.font = `600 13px ${fontBold}`;
 
-    // تقسيم النص لأسطر تتناسب مع عرض الصندوق (boxW = 244px)
-    const titleLines = wrapText(ctx, title, boxW).slice(0, 3); // أقصى حد 3 سطور
+    const titleLines = wrapText(ctx, title, boxW).slice(0, 3);
 
     let titleY = currentY + 12;
     titleLines.forEach((line) => {
@@ -262,8 +261,12 @@ export default async function handler(req, res) {
 
     currentY += priceBoxH + 10;
 
-    // صندوق المقاسات
-    const sizeBoxH = 46;
+    // صندوق المقاسات (ديناميكي ليتسع لأسطر متعددة)
+    ctx.font = `800 12px ${fontBold}`;
+    const sizeLines = wrapText(ctx, String(sizes), boxW - 22);
+    const sizeLineHeight = 16;
+    const sizeBoxH = 24 + (sizeLines.length * sizeLineHeight) + 6;
+
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#e6e3dc';
     ctx.lineWidth = 1;
@@ -278,68 +281,115 @@ export default async function handler(req, res) {
 
     ctx.fillStyle = '#222222';
     ctx.font = `800 12px ${fontBold}`;
-    ctx.fillText(String(sizes), rightMargin - 11, currentY + 34);
+    let sizeY = currentY + 32;
+    sizeLines.forEach(line => {
+      ctx.fillText(line, rightMargin - 11, sizeY);
+      sizeY += sizeLineHeight;
+    });
 
     currentY += sizeBoxH + 8;
 
-    // صندوق الألوان (مع دوائر الألوان)
+    // صندوق الألوان (دوائر متعددة وربط تلفيف لأسماء الألوان)
     const hasColors = colorsText && colorsText !== 'لون واحد' && colorsText !== 'غير متوفر';
-    const colorBoxH = hasColors ? 64 : 46;
-
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.roundRect(boxX, currentY, boxW, colorBoxH, 12);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = '#888888';
-    ctx.font = `600 8px ${fontReg}`;
-    ctx.fillText('الألوان المتوفرة', rightMargin - 11, currentY + 15);
 
     if (hasColors) {
       const colorsList = colorsText.split('-').map(x => x.trim()).filter(Boolean);
-      let dotX = rightMargin - 22;
-      const dotY = currentY + 30;
+      const maxDotsPerRow = 8;
+      const numColorRows = Math.ceil(colorsList.length / maxDotsPerRow);
 
-      // رسم دوائر الألوان
-      colorsList.forEach(name => {
-        const firstWord = name.split(' ')[0];
-        const hex = colorMap[firstWord] || colorMap[name] || '#999999';
+      ctx.font = `600 8px ${fontReg}`;
+      const colorTextLines = wrapText(ctx, colorsText, boxW - 22);
 
-        ctx.save();
-        ctx.fillStyle = hex;
-        ctx.beginPath();
-        ctx.arc(dotX, dotY, 8, 0, Math.PI * 2);
-        ctx.fill();
+      const dotRowHeight = 22;
+      const textLineHeight = 12;
+      const colorBoxH = 22 + (numColorRows * dotRowHeight) + (colorTextLines.length * textLineHeight) + 8;
 
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#e6e3dc';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(boxX, currentY, boxW, colorBoxH, 12);
+      ctx.fill();
+      ctx.stroke();
 
-        ctx.strokeStyle = '#cfcfcf';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.restore();
-
-        dotX -= 22;
-      });
-
-      // أسماء الألوان أسفل الدوائر
       ctx.fillStyle = '#888888';
       ctx.font = `600 8px ${fontReg}`;
-      ctx.fillText(colorsText, rightMargin - 11, currentY + 52);
+      ctx.fillText('الألوان المتوفرة', rightMargin - 11, currentY + 15);
+
+      let dotY = currentY + 30;
+      for (let r = 0; r < numColorRows; r++) {
+        const rowColors = colorsList.slice(r * maxDotsPerRow, (r + 1) * maxDotsPerRow);
+        let dotX = rightMargin - 22;
+
+        rowColors.forEach(name => {
+          const firstWord = name.split(' ')[0];
+          const hex = colorMap[firstWord] || colorMap[name] || '#999999';
+
+          ctx.save();
+          ctx.fillStyle = hex;
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, 8, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.strokeStyle = '#cfcfcf';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.restore();
+
+          dotX -= 22;
+        });
+
+        dotY += dotRowHeight;
+      }
+
+      let textY = currentY + 22 + (numColorRows * dotRowHeight) + 8;
+      ctx.fillStyle = '#888888';
+      ctx.font = `600 8px ${fontReg}`;
+
+      colorTextLines.forEach(line => {
+        ctx.fillText(line, rightMargin - 11, textY);
+        textY += textLineHeight;
+      });
+
+      currentY += colorBoxH + 8;
     } else {
+      const colorBoxH = 46;
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#e6e3dc';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(boxX, currentY, boxW, colorBoxH, 12);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#888888';
+      ctx.font = `600 8px ${fontReg}`;
+      ctx.fillText('الألوان المتوفرة', rightMargin - 11, currentY + 15);
+
       ctx.fillStyle = '#222222';
       ctx.font = `800 12px ${fontBold}`;
       ctx.fillText(colorsText || '-', rightMargin - 11, currentY + 34);
+
+      currentY += colorBoxH + 8;
     }
 
-    currentY += colorBoxH + 8;
-
-    // صندوق التفاصيل (ATTRIBUTES BOX)
+    // صندوق التفاصيل والمواصفات (ATTRIBUTES BOX - تلفيف تلقائي ديناميكي لكل سطر)
     if (attributesText) {
-      const lines = attributesText.split(/\r\n|\r|\n/).map(x => x.trim().replace(/^•\s*/, '')).filter(Boolean);
-      const attrBoxH = 22 + (lines.length * 16);
+      const rawLines = attributesText.split(/\r\n|\r|\n/).map(x => x.trim().replace(/^•\s*/, '')).filter(Boolean);
+
+      ctx.font = `400 9px ${fontReg}`;
+      const allAttrLines = [];
+      rawLines.forEach(raw => {
+        const wrapped = wrapText(ctx, raw, boxW - 24);
+        allAttrLines.push(...wrapped);
+      });
+
+      const attrLineHeight = 14;
+      const attrBoxH = 24 + (allAttrLines.length * attrLineHeight) + 6;
 
       ctx.fillStyle = '#eeece6';
       ctx.beginPath();
@@ -354,17 +404,9 @@ export default async function handler(req, res) {
       ctx.font = `400 9px ${fontReg}`;
       ctx.fillStyle = '#666666';
 
-      lines.forEach((line, idx) => {
+      allAttrLines.forEach((line) => {
         ctx.fillText(line, rightMargin - 12, lineY);
-        if (idx < lines.length - 1) {
-          ctx.strokeStyle = 'rgba(0,0,0,0.07)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(rightMargin - 12, lineY + 4);
-          ctx.lineTo(boxX + 12, lineY + 4);
-          ctx.stroke();
-        }
-        lineY += 16;
+        lineY += attrLineHeight;
       });
     }
 
