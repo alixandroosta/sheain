@@ -21,6 +21,22 @@ async function loadFonts() {
   }
 }
 
+// دالة تنظيف كود شي إن وتحويله إلى Base36 قصير
+function processSheinCode(rawCode) {
+  if (!rawCode || rawCode === '-') return '-';
+  let cleaned = String(rawCode).trim();
+  
+  // إزالة SheIn من البداية و MO من النهاية
+  cleaned = cleaned.replace(/^shein/i, '').replace(/mo$/i, '').trim();
+  
+  // التحويل إلى Base36 إذا كان الرقم صالحاً
+  const num = Number(cleaned);
+  if (!isNaN(num) && num > 0) {
+    return num.toString(36).toUpperCase();
+  }
+  return cleaned.toUpperCase();
+}
+
 // دالة تقسيم النص وتلفيفه تلقائياً لأسطر متعددة (Word Wrap)
 function wrapText(ctx, text, maxWidth) {
   const words = text.split(' ');
@@ -93,7 +109,9 @@ export default async function handler(req, res) {
   } catch (e) {}
   data = { ...req.query, ...data };
 
-  const shein = data.shein || '-';
+  const rawShein = data.shein || '-';
+  const shortCode = processSheinCode(rawShein);
+
   const title = (data.title || 'منتج شي إن').trim();
   const price = data.reply || data.price || '-';
   const sizes = data.sizes || '-';
@@ -144,25 +162,44 @@ export default async function handler(req, res) {
     ctx.fillStyle = '#ffffff';
     ctx.fillText(' SheIn', 25 + syriaWidth + dotWidth, 42);
 
-    // كود المنتج (Product Code Pill)
-    if (shein && shein !== '-') {
-      ctx.font = `600 16px ${fontBold}`;
-      const codeText = String(shein);
-      const textW = ctx.measureText(codeText).width;
-      const pillW = textW + 24;
-      const pillH = 32;
-      const pillX = baseW - 25 - pillW;
-      const pillY = 18;
+    // كود المنتج القصير البارز (Product Short Code Box)
+    if (shortCode && shortCode !== '-') {
+      const labelText = 'رقم المنتج: ';
 
-      ctx.strokeStyle = '#555555';
-      ctx.lineWidth = 1;
+      ctx.font = `700 13px ${fontBold}`;
+      const labelW = ctx.measureText(labelText).width;
+
+      ctx.font = `900 19px ${fontBold}`;
+      const codeW = ctx.measureText(shortCode).width;
+
+      const pillW = labelW + codeW + 28;
+      const pillH = 38;
+      const pillX = baseW - 25 - pillW;
+      const pillY = 15;
+
+      // خلفية الخانة وإطار ذهبي بارز
+      ctx.fillStyle = '#1e1e1e';
+      ctx.strokeStyle = '#d4b46a';
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.roundRect(pillX, pillY, pillW, pillH, 16);
+      ctx.roundRect(pillX, pillY, pillW, pillH, 12);
+      ctx.fill();
       ctx.stroke();
 
+      // كتابة النص
+      ctx.textAlign = 'right';
+      const rightEdge = baseW - 38;
+
+      // كلمة "رقم المنتج: " بالذهبي
+      ctx.font = `700 13px ${fontBold}`;
+      ctx.fillStyle = '#d4b46a';
+      ctx.fillText(labelText, rightEdge, pillY + 24);
+
+      // الكود القصير بالأبيض العريض والواضح
+      ctx.font = `900 19px ${fontBold}`;
       ctx.fillStyle = '#ffffff';
-      ctx.textAlign = 'center';
-      ctx.fillText(codeText, pillX + (pillW / 2), pillY + 22);
+      ctx.fillText(shortCode, rightEdge - labelW, pillY + 25);
+
       ctx.textAlign = 'left';
     }
 
@@ -377,7 +414,7 @@ export default async function handler(req, res) {
       currentY += colorBoxH + 8;
     }
 
-    // صندوق التفاصيل والمواصفات (ATTRIBUTES BOX - تلفيف تلقائي ديناميكي لكل سطر)
+    // صندوق التفاصيل والمواصفات (ATTRIBUTES BOX)
     if (attributesText) {
       const rawLines = attributesText.split(/\r\n|\r|\n/).map(x => x.trim().replace(/^•\s*/, '')).filter(Boolean);
 
