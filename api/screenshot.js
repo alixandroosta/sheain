@@ -162,24 +162,26 @@ export default async function handler(req, res) {
     ctx.fillStyle = '#ffffff';
     ctx.fillText(' SheIn', 25 + syriaWidth + dotWidth, 42);
 
-        // كود المنتج القصير (رقم المنتج خارج الإطار الذهبي)
+    // كود المنتج القصير البارز (مع زيادة التباعد بين الأحرف فقط)
     if (shortCode && shortCode !== '-') {
+      // تفكيك الكود بمسافات بين الأحرف (مثلاً: "9269AJ" تصبح "9 2 6 9 A J")
+      const spacedCode = shortCode.split('').join(' ');
+
       const labelText = 'رقم المنتج';
-      const gapBetween = 10; // المسافة بين الكلمة والإطار
-      const boxPadding = 16;  // بادينغ داخل إطار الكود
+      const gapBetween = 10; // المسافة بين النص والإطار
+      const boxPadding = 14; // البادينغ الداخلي للإطار
 
       ctx.font = `700 13px ${fontBold}`;
       const labelW = ctx.measureText(labelText).width;
 
-      ctx.font = `900 18px ${fontBold}`;
-      const codeW = ctx.measureText(shortCode).width;
+      ctx.font = `900 16px ${fontBold}`;
+      const codeW = ctx.measureText(spacedCode).width;
 
       const pillW = codeW + (boxPadding * 2);
       const pillH = 38;
       const pillY = 15;
 
-      // تحديد موقع الإطار وكلمة "رقم المنتج"
-      const labelX = baseW - 25;
+      const labelX = baseW - 25; // الموضع الأصلي كما هو
       const pillX = labelX - labelW - gapBetween - pillW;
 
       // 1. رسم كلمة "رقم المنتج" خارج الإطار
@@ -188,7 +190,7 @@ export default async function handler(req, res) {
       ctx.fillStyle = '#d4b46a';
       ctx.fillText(labelText, labelX, pillY + 24);
 
-      // 2. رسم الإطار الذهبي للكود فقط
+      // 2. رسم الإطار الذهبي
       ctx.fillStyle = '#1e1e1e';
       ctx.strokeStyle = '#d4b46a';
       ctx.lineWidth = 1.5;
@@ -197,13 +199,14 @@ export default async function handler(req, res) {
       ctx.fill();
       ctx.stroke();
 
-      // 3. رسم الكود القصير داخل الإطار
-      ctx.font = `900 18px ${fontBold}`;
+      // 3. رسم الكود المتباعد والأنيق داخل الإطار
+      ctx.font = `900 16px ${fontBold}`;
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(shortCode, pillX + pillW - boxPadding, pillY + 24);
+      ctx.fillText(spacedCode, pillX + pillW - boxPadding, pillY + 24);
 
       ctx.textAlign = 'left';
     }
+
 
 
     // 4. جانب الصورة (IMAGE SIDE - 410px)
