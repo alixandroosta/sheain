@@ -26,10 +26,8 @@ function processSheinCode(rawCode) {
   if (!rawCode || rawCode === '-') return '-';
   let cleaned = String(rawCode).trim();
   
-  // إزالة SheIn من البداية و MO من النهاية
   cleaned = cleaned.replace(/^shein/i, '').replace(/mo$/i, '').trim();
   
-  // التحويل إلى Base36 إذا كان الرقم صالحاً
   const num = Number(cleaned);
   if (!isNaN(num) && num > 0) {
     return num.toString(36).toUpperCase();
@@ -57,45 +55,6 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
-// خريطة الألوان المطابقة للسكربت في تصميمك
-const colorMap = {
-  'وردي فاتح': '#f8bbd0', 'ذهبي': '#d4b46a', 'فضي': '#c0c0c0',
-  "أحمر": "#FF3B30", "احمر": "#FF3B30", "أزرق": "#007AFF", "ازرق": "#007AFF", 
-  "كحلي": "#002060", "سماوي": "#87CEEB", "أصفر": "#FFCC00", "اصفر": "#FFCC00",
-  "أبيض": "#FFFFFF", "ابيض": "#FFFFFF", "أسود": "#000000", "اسود": "#000000",
-  "أخضر": "#34C759", "اخضر": "#34C759", "زيتي": "#556B2F", "وردي": "#FF69B4", 
-  "روز": "#FFB6C1", "زهري": "#FFB6C1", "بني": "#8B4513", "بيج": "#F5F5DC",
-  "رمادي": "#808080", "رصاصي": "#808080", "خمري": "#800020", "عنابي": "#800020",
-  "بنفسجي": "#AF52DE", "موف": "#E0B0FF", "برتقالي": "#FF9500",
-  'الذهبي': '#d4b46a', 'الفضي': '#c0c0c0',
-  "الأحمر": "#FF3B30", "الاحمر": "#FF3B30", "الأزرق": "#007AFF", "الازرق": "#007AFF", 
-  "الكحلي": "#002060", "السماوي": "#87CEEB", "الأصفر": "#FFCC00", "الاصفر": "#FFCC00",
-  "الأبيض": "#FFFFFF", "الابيض": "#FFFFFF", "الأسود": "#000000", "الاسود": "#000000",
-  "الأخضر": "#34C759", "الاخضر": "#34C759", "الزيتي": "#556B2F", "الوردي": "#FF69B4", 
-  "الروز": "#FFB6C1", "الزهري": "#FFB6C1", "البني": "#8B4513", "البيج": "#F5F5DC",
-  "الرمادي": "#808080", "الرصاصي": "#808080", "الخمري": "#800020", "العنابي": "#800020",
-  "البنفسجي": "#AF52DE", "الموف": "#E0B0FF", "البرتقالي": "#FF9500"
-};
-
-// دالة رسم الصورة بطريقة Cover
-function drawImageCover(ctx, img, x, y, w, h) {
-  const imgRatio = img.width / img.height;
-  const rectRatio = w / h;
-  let sx, sy, sw, sh;
-  if (imgRatio > rectRatio) {
-    sh = img.height;
-    sw = img.height * rectRatio;
-    sx = (img.width - sw) / 2;
-    sy = 0;
-  } else {
-    sw = img.width;
-    sh = img.width / rectRatio;
-    sx = 0;
-    sy = (img.height - sh) / 2;
-  }
-  ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
-}
-
 export default async function handler(req, res) {
   await loadFonts();
   const fontBold = isFontLoaded ? 'TajawalBold' : 'sans-serif';
@@ -120,105 +79,80 @@ export default async function handler(req, res) {
   let imageUrl = data.file_id || '';
 
   try {
-    // 1. إعداد دقة الكانفاس بـ Scale 2 لضمان الوضوح العالي (1400x1200)
     const scale = 2;
-    const baseW = 700;
-    const baseH = 600;
+    const baseW = 500;
+    const baseH = 920;
 
     const canvas = createCanvas(baseW * scale, baseH * scale);
     const ctx = canvas.getContext('2d');
     ctx.scale(scale, scale);
 
-    // 2. خلفية البطاقة الأساسية والديكورات الدائرية
-    ctx.fillStyle = '#f8f7f3';
+    // خلفية البطاقة
+    ctx.fillStyle = '#faf8f5';
     ctx.fillRect(0, 0, baseW, baseH);
 
-    // الدائرة الذهبية الشفافة أعلى اليسار
-    ctx.fillStyle = 'rgba(212, 180, 106, 0.10)';
-    ctx.beginPath();
-    ctx.arc(-100 + 130, -130 + 130, 130, 0, Math.PI * 2);
-    ctx.fill();
-
-    // الدائرة الداكنة الشفافة أسفل اليمين
-    ctx.fillStyle = 'rgba(17, 17, 17, 0.04)';
-    ctx.beginPath();
-    ctx.arc(baseW - 70 + 100, baseH + 100 - 100, 100, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 3. الهيدر (HEADER)
+    // 1. الهيدر (HEADER)
     ctx.fillStyle = '#111111';
-    ctx.fillRect(0, 0, baseW, 68);
+    ctx.fillRect(0, 0, baseW, 55);
 
     // شعار Syria • SheIn
-    ctx.font = `900 21px ${fontBold}`;
+    ctx.textAlign = 'left';
+    ctx.font = `900 18px ${fontBold}`;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('Syria ', 25, 42);
+    ctx.fillText('Syria ', 20, 34);
     const syriaWidth = ctx.measureText('Syria ').width;
 
     ctx.fillStyle = '#d4b46a';
-    ctx.fillText('•', 25 + syriaWidth, 42);
+    ctx.fillText('•', 20 + syriaWidth, 34);
     const dotWidth = ctx.measureText('• ').width;
 
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(' SheIn', 25 + syriaWidth + dotWidth, 42);
+    ctx.fillText(' SheIn', 20 + syriaWidth + dotWidth, 34);
 
-       // كود المنتج القصير البارز (مع زيادة التباعد بين الأحرف فقط)
+    // رقم المنتج
     if (shortCode && shortCode !== '-') {
-      // تفكيك الكود بمسافات بين الأحرف (مثلاً: "9269AJ" تصبح "9 2 6 9 A J")
+      ctx.textAlign = 'right';
+      ctx.font = `600 13px ${fontBold}`;
+      ctx.fillStyle = '#aaaaaa';
+      ctx.fillText('رقم المنتج', baseW - 20, 33);
+      const labelW = ctx.measureText('رقم المنتج').width;
+
       const spacedCode = shortCode.split('').join(' ');
-
-      const labelText = 'رقم المنتج';
-      const gapBetween = 10; // المسافة بين النص والإطار
-      const boxPadding = 14; // البادينغ الداخلي للإطار
-
-      ctx.font = `700 13px ${fontBold}`;
-      const labelW = ctx.measureText(labelText).width;
-
-      ctx.font = `900 16px ${fontBold}`;
+      ctx.font = `900 14px ${fontBold}`;
       const codeW = ctx.measureText(spacedCode).width;
 
-      const pillW = codeW + (boxPadding * 2);
-      const pillH = 38;
-      const pillY = 15;
+      const pillW = codeW + 20;
+      const pillH = 30;
+      const pillX = baseW - 25 - labelW - pillW;
+      const pillY = 12;
 
-      const labelX = baseW - 25; // الموضع الأصلي كما هو
-      const pillX = labelX - labelW - gapBetween - pillW;
-
-      // 1. رسم كلمة "رقم المنتج" خارج الإطار
-      ctx.textAlign = 'right';
-      ctx.font = `700 13px ${fontBold}`;
-      ctx.fillStyle = '#d4b46a';
-      ctx.fillText(labelText, labelX, pillY + 24);
-
-      // 2. رسم الإطار الذهبي
-      ctx.fillStyle = '#1e1e1e';
-      ctx.strokeStyle = '#d4b46a';
-      ctx.lineWidth = 1.5;
+      ctx.fillStyle = '#222222';
+      ctx.strokeStyle = '#333333';
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.roundRect(pillX, pillY, pillW, pillH, 12);
+      ctx.roundRect(pillX, pillY, pillW, pillH, 15);
       ctx.fill();
       ctx.stroke();
 
-      // 3. رسم الكود المتباعد والأنيق داخل الإطار
-      ctx.font = `900 16px ${fontBold}`;
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(spacedCode, pillX + pillW - boxPadding, pillY + 24);
-
-      ctx.textAlign = 'left';
+      ctx.textAlign = 'center';
+      ctx.fillText(spacedCode, pillX + (pillW / 2), pillY + 20);
     }
 
+    let currentY = 70;
 
-    // 4. جانب الصورة (IMAGE SIDE - 410px)
-    const imgSideW = 410;
-    const imgX = 16;
-    const imgY = 68 + 16;
-    const imgW = imgSideW - 32; // 378px
-    const imgH = baseH - 68 - 32; // 500px
+    // 2. صورة المنتج
+    const margin = 20;
+    const imgW = baseW - (margin * 2);
+    const imgH = 460;
+    const imgX = margin;
+    const imgY = currentY;
 
-    ctx.fillStyle = '#e9e7e2';
-    ctx.fillRect(imgX, imgY, imgW, imgH);
+    ctx.fillStyle = '#eae6df';
+    ctx.beginPath();
+    ctx.roundRect(imgX, imgY, imgW, imgH, 12);
+    ctx.fill();
 
-    // جلب الصورة بأمان وتحويل AVIF إلى JPG تلقائياً
     if (imageUrl) {
       try {
         const cleanImageUrl = imageUrl
@@ -234,254 +168,158 @@ export default async function handler(req, res) {
         if (imgRes.ok) {
           const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
           const img = await loadImage(imgBuffer);
-          drawImageCover(ctx, img, imgX, imgY, imgW, imgH);
-        } else {
-          // تجربة الرابط الأصلي كاحتياط
-          const fallbackRes = await fetch(imageUrl);
-          if (fallbackRes.ok) {
-            const imgBuffer = Buffer.from(await fallbackRes.arrayBuffer());
-            const img = await loadImage(imgBuffer);
-            drawImageCover(ctx, img, imgX, imgY, imgW, imgH);
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(imgX, imgY, imgW, imgH, 12);
+          ctx.clip();
+          
+          // رسم الصورة بتناسب الحجم (Cover)
+          const imgRatio = img.width / img.height;
+          const rectRatio = imgW / imgH;
+          let sx, sy, sw, sh;
+          if (imgRatio > rectRatio) {
+            sh = img.height;
+            sw = img.height * rectRatio;
+            sx = (img.width - sw) / 2;
+            sy = 0;
+          } else {
+            sw = img.width;
+            sh = img.width / rectRatio;
+            sx = 0;
+            sy = (img.height - sh) / 2;
           }
+          ctx.drawImage(img, sx, sy, sw, sh, imgX, imgY, imgW, imgH);
+          ctx.restore();
         }
       } catch (err) {
         console.error('خطأ جلب الصورة:', err.message);
       }
     }
 
-    // الإطار الداخلي الأنيق للصورة
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.strokeStyle = '#e0ded8';
     ctx.lineWidth = 1;
-    ctx.strokeRect(imgX + 10, imgY + 10, imgW - 20, imgH - 20);
+    ctx.beginPath();
+    ctx.roundRect(imgX, imgY, imgW, imgH, 12);
+    ctx.stroke();
 
-    // 5. جانب البيانات (INFO SIDE)
-    const rightMargin = baseW - 18; // 682px
-    const boxW = 244;
-    const boxX = rightMargin - boxW;
-    let currentY = 68 + 18;
+    currentY += imgH + 15;
 
-    ctx.textAlign = 'right';
+    // 3. عنوان المنتج
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#111111';
+    ctx.font = `700 15px ${fontBold}`;
 
-    // عنوان المنتج (التكفيل التلقائي بالأسطر)
-    ctx.fillStyle = '#161616';
-    ctx.font = `600 13px ${fontBold}`;
-
-    const titleLines = wrapText(ctx, title, boxW).slice(0, 3);
-
-    let titleY = currentY + 12;
-    titleLines.forEach((line) => {
-      ctx.fillText(line, rightMargin, titleY);
-      titleY += 18;
+    const titleLines = wrapText(ctx, title, imgW - 20).slice(0, 2);
+    titleLines.forEach(line => {
+      ctx.fillText(line, baseW / 2, currentY);
+      currentY += 20;
     });
 
-    currentY = titleY + 4;
+    currentY += 10;
 
-    // الخط الذهبي
-    ctx.fillStyle = '#d4b46a';
-    ctx.fillRect(rightMargin - 45, currentY, 45, 3);
-    currentY += 14;
-
-    // صندوق السعر
-    const priceBoxH = 60;
+    // 4. صندوق السعر
+    const priceBoxH = 50;
     ctx.fillStyle = '#111111';
     ctx.beginPath();
-    ctx.roundRect(boxX, currentY, boxW, priceBoxH, 14);
+    ctx.roundRect(margin, currentY, imgW, priceBoxH, 10);
     ctx.fill();
 
-    ctx.fillStyle = '#aaaaaa';
-    ctx.font = `400 10px ${fontReg}`;
-    ctx.fillText('السعر', rightMargin - 15, currentY + 18);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#888888';
+    ctx.font = `400 9px ${fontReg}`;
+    ctx.fillText('السعر', baseW / 2, currentY + 14);
 
+    ctx.fillStyle = '#e5be69';
+    ctx.font = `900 20px ${fontBold}`;
+    ctx.fillText(`${price} ل.س`, baseW / 2, currentY + 38);
+
+    currentY += priceBoxH + 12;
+
+    // 5. صناديق المقاسات والألوان المتجاورة
+    const gap = 12;
+    const subBoxW = (imgW - gap) / 2;
+    const boxH = 70;
+
+    // الألوان (يمين)
+    const colorsBoxX = margin + subBoxW + gap;
     ctx.fillStyle = '#ffffff';
-    ctx.font = `900 24px ${fontBold}`;
-    ctx.fillText(String(price), rightMargin - 15, currentY + 46);
-
-    const priceTextW = ctx.measureText(String(price)).width;
-    ctx.fillStyle = '#d4b46a';
-    ctx.font = `600 12px ${fontBold}`;
-    ctx.fillText('ل.س', rightMargin - 20 - priceTextW, currentY + 46);
-
-    currentY += priceBoxH + 10;
-
-    // صندوق المقاسات (ديناميكي ليتسع لأسطر متعددة)
-    ctx.font = `800 12px ${fontBold}`;
-    const sizeLines = wrapText(ctx, String(sizes), boxW - 22);
-    const sizeLineHeight = 16;
-    const sizeBoxH = 24 + (sizeLines.length * sizeLineHeight) + 6;
-
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#e6e3dc';
+    ctx.strokeStyle = '#e8e6e1';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(boxX, currentY, boxW, sizeBoxH, 12);
+    ctx.roundRect(colorsBoxX, currentY, subBoxW, boxH, 10);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#999999';
+    ctx.font = `400 10px ${fontReg}`;
+    ctx.fillText('الألوان المتوفرة', colorsBoxX + (subBoxW / 2), currentY + 20);
+
+    ctx.fillStyle = '#222222';
+    ctx.font = `700 11px ${fontBold}`;
+    const displayColor = colorsText ? colorsText.split('-')[0].trim() : 'متعدد الألوان';
+    ctx.fillText(displayColor, colorsBoxX + (subBoxW / 2), currentY + 48);
+
+    // المقاسات (يسار)
+    const sizesBoxX = margin;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#e8e6e1';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(sizesBoxX, currentY, subBoxW, boxH, 10);
     ctx.fill();
     ctx.stroke();
 
     ctx.fillStyle = '#999999';
-    ctx.font = `400 9px ${fontReg}`;
-    ctx.fillText('المقاسات المتوفرة', rightMargin - 11, currentY + 16);
+    ctx.font = `400 10px ${fontReg}`;
+    ctx.fillText('المقاسات المتوفرة', sizesBoxX + (subBoxW / 2), currentY + 20);
 
-    ctx.fillStyle = '#222222';
+    ctx.fillStyle = '#111111';
     ctx.font = `800 12px ${fontBold}`;
-    let sizeY = currentY + 32;
-    sizeLines.forEach(line => {
-      ctx.fillText(line, rightMargin - 11, sizeY);
-      sizeY += sizeLineHeight;
-    });
+    ctx.fillText(String(sizes), sizesBoxX + (subBoxW / 2), currentY + 48);
 
-    currentY += sizeBoxH + 8;
+    currentY += boxH + 12;
 
-    // صندوق الألوان (دوائر متعددة وربط تلفيف لأسماء الألوان)
-    const hasColors = colorsText && colorsText !== 'لون واحد' && colorsText !== 'غير متوفر';
-
-    if (hasColors) {
-      const colorsList = colorsText.split('-').map(x => x.trim()).filter(Boolean);
-      const maxDotsPerRow = 8;
-      const numColorRows = Math.ceil(colorsList.length / maxDotsPerRow);
-
-      ctx.font = `600 8px ${fontReg}`;
-      const colorTextLines = wrapText(ctx, colorsText, boxW - 22);
-
-      const dotRowHeight = 22;
-      const textLineHeight = 12;
-      const colorBoxH = 22 + (numColorRows * dotRowHeight) + (colorTextLines.length * textLineHeight) + 8;
-
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#e6e3dc';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(boxX, currentY, boxW, colorBoxH, 12);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = '#888888';
-      ctx.font = `600 8px ${fontReg}`;
-      ctx.fillText('الألوان المتوفرة', rightMargin - 11, currentY + 15);
-
-      let dotY = currentY + 30;
-      for (let r = 0; r < numColorRows; r++) {
-        const rowColors = colorsList.slice(r * maxDotsPerRow, (r + 1) * maxDotsPerRow);
-        let dotX = rightMargin - 22;
-
-        rowColors.forEach(name => {
-          const firstWord = name.split(' ')[0];
-          const hex = colorMap[firstWord] || colorMap[name] || '#999999';
-
-          ctx.save();
-          ctx.fillStyle = hex;
-          ctx.beginPath();
-          ctx.arc(dotX, dotY, 8, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-
-          ctx.strokeStyle = '#cfcfcf';
-          ctx.lineWidth = 1;
-          ctx.stroke();
-          ctx.restore();
-
-          dotX -= 22;
-        });
-
-        dotY += dotRowHeight;
-      }
-
-      let textY = currentY + 22 + (numColorRows * dotRowHeight) + 8;
-      ctx.fillStyle = '#888888';
-      ctx.font = `600 8px ${fontReg}`;
-
-      colorTextLines.forEach(line => {
-        ctx.fillText(line, rightMargin - 11, textY);
-        textY += textLineHeight;
-      });
-
-      currentY += colorBoxH + 8;
-    } else {
-      const colorBoxH = 46;
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#e6e3dc';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.roundRect(boxX, currentY, boxW, colorBoxH, 12);
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.fillStyle = '#888888';
-      ctx.font = `600 8px ${fontReg}`;
-      ctx.fillText('الألوان المتوفرة', rightMargin - 11, currentY + 15);
-
-      ctx.fillStyle = '#222222';
-      ctx.font = `800 12px ${fontBold}`;
-      ctx.fillText(colorsText || '-', rightMargin - 11, currentY + 34);
-
-      currentY += colorBoxH + 8;
-    }
-
-    // صندوق التفاصيل والمواصفات (ATTRIBUTES BOX)
-    if (attributesText) {
-      const rawLines = attributesText.split(/\r\n|\r|\n/).map(x => x.trim().replace(/^•\s*/, '')).filter(Boolean);
-
-      ctx.font = `400 9px ${fontReg}`;
-      const allAttrLines = [];
-      rawLines.forEach(raw => {
-        const wrapped = wrapText(ctx, raw, boxW - 24);
-        allAttrLines.push(...wrapped);
-      });
-
-      const attrLineHeight = 14;
-      const attrBoxH = 24 + (allAttrLines.length * attrLineHeight) + 6;
-
-      ctx.fillStyle = '#eeece6';
-      ctx.beginPath();
-      ctx.roundRect(boxX, currentY, boxW, attrBoxH, 12);
-      ctx.fill();
-
-      ctx.fillStyle = '#222222';
-      ctx.font = `900 10px ${fontBold}`;
-      ctx.fillText('تفاصيل المنتج', rightMargin - 12, currentY + 16);
-
-      let lineY = currentY + 30;
-      ctx.font = `400 9px ${fontReg}`;
-      ctx.fillStyle = '#666666';
-
-      allAttrLines.forEach((line) => {
-        ctx.fillText(line, rightMargin - 12, lineY);
-        lineY += attrLineHeight;
-      });
-    }
-
-    // الفوتر (FOOTER)
-    const footerY = baseH - 20;
-    ctx.strokeStyle = '#ddd9d0';
+    // 6. صندوق التفاصيل
+    const attrBoxH = 50;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#e8e6e1';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(boxX, footerY - 12);
-    ctx.lineTo(rightMargin, footerY - 12);
+    ctx.roundRect(margin, currentY, imgW, attrBoxH, 10);
+    ctx.fill();
     ctx.stroke();
 
-    // Brand
+    ctx.fillStyle = '#111111';
+    ctx.font = `700 11px ${fontBold}`;
+    ctx.fillText('تفاصيل المنتج', baseW / 2, currentY + 20);
+
+    ctx.fillStyle = '#777777';
+    ctx.font = `400 10px ${fontReg}`;
+    ctx.fillText(attributesText || 'غير متوفر', baseW / 2, currentY + 38);
+
+    // 7. الفوتر السفلي (ديناميكي)
+    const footerY = baseH - 30;
+
     ctx.textAlign = 'left';
     ctx.font = `900 11px ${fontBold}`;
     ctx.fillStyle = '#111111';
-    ctx.fillText('SheIn ', boxX, footerY);
-    const sheinW = ctx.measureText('SheIn ').width;
+    ctx.fillText('SheIn ', margin, footerY);
+    const fSheinW = ctx.measureText('SheIn ').width;
 
     ctx.fillStyle = '#d4b46a';
-    ctx.fillText('•', boxX + sheinW, footerY);
-    const dotW2 = ctx.measureText('• ').width;
+    ctx.fillText('•', margin + fSheinW, footerY);
+    const fDotW = ctx.measureText('• ').width;
 
     ctx.fillStyle = '#111111';
-    ctx.fillText(' Syria', boxX + sheinW + dotW2, footerY);
+    ctx.fillText(' Syria', margin + fSheinW + fDotW, footerY);
 
-    // Text Right
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#999999';
-    ctx.font = `400 8px ${fontReg}`;
-    ctx.fillText('اطلبها بسهولة واستلمها عندك', rightMargin, footerY);
+    ctx.fillStyle = '#aaaaaa';
+    ctx.font = `400 10px ${fontReg}`;
+    ctx.fillText('اطلبها بسهولة واستلمها عندك', baseW - margin, footerY);
 
-    // تصدير الصورة بجودة PNG عالية
+    // تصدير الصورة
     const imageBuffer = canvas.toBuffer('image/png');
     res.setHeader('Content-Type', 'image/png');
     return res.status(200).send(imageBuffer);
