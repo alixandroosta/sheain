@@ -55,6 +55,26 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
+// خريطة الألوان المطابقة للسكربت في تصميمك
+const colorMap = {
+  'وردي فاتح': '#f8bbd0', 'ذهبي': '#d4b46a', 'فضي': '#c0c0c0',
+  "أحمر": "#FF3B30", "احمر": "#FF3B30", "أزرق": "#007AFF", "ازرق": "#007AFF", 
+  "كحلي": "#002060", "سماوي": "#87CEEB", "أصفر": "#FFCC00", "اصفر": "#FFCC00",
+  "أبيض": "#FFFFFF", "ابيض": "#FFFFFF", "أسود": "#000000", "اسود": "#000000",
+  "أخضر": "#34C759", "اخضر": "#34C759", "زيتي": "#556B2F", "وردي": "#FF69B4", 
+  "روز": "#FFB6C1", "زهري": "#FFB6C1", "بني": "#8B4513", "بيج": "#F5F5DC",
+  "رمادي": "#808080", "رصاصي": "#808080", "خمري": "#800020", "عنابي": "#800020",
+  "بنفسجي": "#AF52DE", "موف": "#E0B0FF", "برتقالي": "#FF9500",
+  'الذهبي': '#d4b46a', 'الفضي': '#c0c0c0',
+  "الأحمر": "#FF3B30", "الاحمر": "#FF3B30", "الأزرق": "#007AFF", "الازرق": "#007AFF", 
+  "الكحلي": "#002060", "السماوي": "#87CEEB", "الأصفر": "#FFCC00", "الاصفر": "#FFCC00",
+  "الأبيض": "#FFFFFF", "الابيض": "#FFFFFF", "الأسود": "#000000", "الاسود": "#000000",
+  "الأخضر": "#34C759", "الاخضر": "#34C759", "الزيتي": "#556B2F", "الوردي": "#FF69B4", 
+  "الروز": "#FFB6C1", "الزهري": "#FFB6C1", "البني": "#8B4513", "البيج": "#F5F5DC",
+  "الرمادي": "#808080", "الرصاصي": "#808080", "الخمري": "#800020", "العنابي": "#800020",
+  "البنفسجي": "#AF52DE", "الموف": "#E0B0FF", "البرتقالي": "#FF9500"
+};
+
 // دالة رسم الصورة بالكامل دون قص (Contain)
 function drawImageContain(ctx, img, x, y, w, h) {
   const imgRatio = img.width / img.height;
@@ -248,7 +268,7 @@ export default async function handler(req, res) {
     const subBoxW = (imgW - gap) / 2;
     const boxH = 70;
 
-    // الألوان (يمين)
+    // --- الألوان (يمين) - مع رسم دوائر الألوان الملونة ---
     const colorsBoxX = margin + subBoxW + gap;
     ctx.fillStyle = '#1e1e1e';
     ctx.strokeStyle = '#2c2c2c';
@@ -261,14 +281,47 @@ export default async function handler(req, res) {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#aaaaaa';
     ctx.font = `400 10px ${fontReg}`;
-    ctx.fillText('الألوان المتوفرة', colorsBoxX + (subBoxW / 2), currentY + 20);
+    ctx.fillText('الألوان المتوفرة', colorsBoxX + (subBoxW / 2), currentY + 18);
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `700 11px ${fontBold}`;
-    const displayColor = colorsText ? colorsText.split('-')[0].trim() : 'متعدد الألوان';
-    ctx.fillText(displayColor, colorsBoxX + (subBoxW / 2), currentY + 48);
+    const hasColors = colorsText && colorsText !== 'لون واحد' && colorsText !== 'غير متوفر';
 
-    // المقاسات (يسار)
+    if (hasColors) {
+      const colorsList = colorsText.split('-').map(x => x.trim()).filter(Boolean);
+      const maxDots = 5;
+      const displayColors = colorsList.slice(0, maxDots);
+      
+      const totalWidth = displayColors.length * 20;
+      let startX = colorsBoxX + (subBoxW / 2) + (totalWidth / 2) - 10;
+      const dotY = currentY + 44;
+
+      displayColors.forEach(name => {
+        const firstWord = name.split(' ')[0];
+        const hex = colorMap[firstWord] || colorMap[name] || '#888888';
+
+        ctx.save();
+        ctx.fillStyle = hex;
+        ctx.beginPath();
+        ctx.arc(startX, dotY, 7, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = '#1e1e1e';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.strokeStyle = '#444444';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+
+        startX -= 20;
+      });
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 11px ${fontBold}`;
+      ctx.fillText(colorsText || 'لون واحد', colorsBoxX + (subBoxW / 2), currentY + 46);
+    }
+
+    // --- المقاسات (يسار) ---
     const sizesBoxX = margin;
     ctx.fillStyle = '#1e1e1e';
     ctx.strokeStyle = '#2c2c2c';
@@ -280,11 +333,11 @@ export default async function handler(req, res) {
 
     ctx.fillStyle = '#aaaaaa';
     ctx.font = `400 10px ${fontReg}`;
-    ctx.fillText('المقاسات المتوفرة', sizesBoxX + (subBoxW / 2), currentY + 20);
+    ctx.fillText('المقاسات المتوفرة', sizesBoxX + (subBoxW / 2), currentY + 18);
 
     ctx.fillStyle = '#ffffff';
     ctx.font = `800 12px ${fontBold}`;
-    ctx.fillText(String(sizes), sizesBoxX + (subBoxW / 2), currentY + 48);
+    ctx.fillText(String(sizes), sizesBoxX + (subBoxW / 2), currentY + 46);
 
     currentY += boxH + 12;
 
