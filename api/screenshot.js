@@ -55,6 +55,27 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
+// دالة رسم الصورة بالكامل دون قص (Contain)
+function drawImageContain(ctx, img, x, y, w, h) {
+  const imgRatio = img.width / img.height;
+  const rectRatio = w / h;
+  let renderW, renderH, renderX, renderY;
+
+  if (imgRatio > rectRatio) {
+    renderW = w;
+    renderH = w / imgRatio;
+    renderX = x;
+    renderY = y + (h - renderH) / 2;
+  } else {
+    renderH = h;
+    renderW = h * imgRatio;
+    renderY = y;
+    renderX = x + (w - renderW) / 2;
+  }
+
+  ctx.drawImage(img, renderX, renderY, renderW, renderH);
+}
+
 export default async function handler(req, res) {
   await loadFonts();
   const fontBold = isFontLoaded ? 'TajawalBold' : 'sans-serif';
@@ -141,14 +162,15 @@ export default async function handler(req, res) {
 
     let currentY = 70;
 
-    // 2. صورة المنتج
+    // 2. صورة المنتج (تظهر بالكامل بدون أي اقتطاع)
     const margin = 20;
     const imgW = baseW - (margin * 2);
     const imgH = 460;
     const imgX = margin;
     const imgY = currentY;
 
-    ctx.fillStyle = '#eae6df';
+    // خلفية حقل الصورة
+    ctx.fillStyle = '#f0eee8';
     ctx.beginPath();
     ctx.roundRect(imgX, imgY, imgW, imgH, 12);
     ctx.fill();
@@ -173,22 +195,8 @@ export default async function handler(req, res) {
           ctx.roundRect(imgX, imgY, imgW, imgH, 12);
           ctx.clip();
           
-          // رسم الصورة بتناسب الحجم (Cover)
-          const imgRatio = img.width / img.height;
-          const rectRatio = imgW / imgH;
-          let sx, sy, sw, sh;
-          if (imgRatio > rectRatio) {
-            sh = img.height;
-            sw = img.height * rectRatio;
-            sx = (img.width - sw) / 2;
-            sy = 0;
-          } else {
-            sw = img.width;
-            sh = img.width / rectRatio;
-            sx = 0;
-            sy = (img.height - sh) / 2;
-          }
-          ctx.drawImage(img, sx, sy, sw, sh, imgX, imgY, imgW, imgH);
+          // رسم الصورة كاملة باستخدام Contain
+          drawImageContain(ctx, img, imgX, imgY, imgW, imgH);
           ctx.restore();
         }
       } catch (err) {
@@ -298,7 +306,7 @@ export default async function handler(req, res) {
     ctx.font = `400 10px ${fontReg}`;
     ctx.fillText(attributesText || 'غير متوفر', baseW / 2, currentY + 38);
 
-    // 7. الفوتر السفلي (ديناميكي)
+    // 7. الفوتر السفلي
     const footerY = baseH - 30;
 
     ctx.textAlign = 'left';
