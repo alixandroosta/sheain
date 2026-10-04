@@ -41,7 +41,7 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
-// خريطة الألوان المطابقة للسكربت
+// خريطة الألوان المطابقة للسكربت في تصميمك
 const colorMap = {
   'وردي فاتح': '#f8bbd0', 'ذهبي': '#d4b46a', 'فضي': '#c0c0c0',
   "أحمر": "#FF3B30", "احمر": "#FF3B30", "أزرق": "#007AFF", "ازرق": "#007AFF", 
@@ -61,7 +61,7 @@ const colorMap = {
   "البنفسجي": "#AF52DE", "الموف": "#E0B0FF", "البرتقالي": "#FF9500"
 };
 
-// دالة رسم الصورة بطريقة Cover متناسقة
+// دالة رسم الصورة بطريقة Cover
 function drawImageCover(ctx, img, x, y, w, h) {
   const imgRatio = img.width / img.height;
   const rectRatio = w / h;
@@ -102,94 +102,81 @@ export default async function handler(req, res) {
   let imageUrl = data.file_id || '';
 
   try {
-    // 1. أبعاد الكانفاس الطولية الخاصة بـ Reels / Story (1080x1920)
+    // 1. إعداد دقة الكانفاس بـ Scale 2 لضمان الوضوح العالي (1400x1200)
     const scale = 2;
-    const baseW = 1080;
-    const baseH = 1920;
+    const baseW = 700;
+    const baseH = 600;
 
     const canvas = createCanvas(baseW * scale, baseH * scale);
     const ctx = canvas.getContext('2d');
     ctx.scale(scale, scale);
 
-    // 2. خلفية البطاقة الداكنة الأنيقة
-    ctx.fillStyle = '#0d0d0d';
+    // 2. خلفية البطاقة الأساسية والديكورات الدائرية
+    ctx.fillStyle = '#f8f7f3';
     ctx.fillRect(0, 0, baseW, baseH);
 
-    // لمسات ديكورية خلفية
-    ctx.fillStyle = 'rgba(212, 180, 106, 0.05)';
+    // الدائرة الذهبية الشفافة أعلى اليسار
+    ctx.fillStyle = 'rgba(212, 180, 106, 0.10)';
     ctx.beginPath();
-    ctx.arc(baseW / 2, 300, 400, 0, Math.PI * 2);
+    ctx.arc(-100 + 130, -130 + 130, 130, 0, Math.PI * 2);
+    ctx.fill();
+
+    // الدائرة الداكنة الشفافة أسفل اليمين
+    ctx.fillStyle = 'rgba(17, 17, 17, 0.04)';
+    ctx.beginPath();
+    ctx.arc(baseW - 70 + 100, baseH + 100 - 100, 100, 0, Math.PI * 2);
     ctx.fill();
 
     // 3. الهيدر (HEADER)
-    const headerH = 110;
-    ctx.fillStyle = '#161616';
-    ctx.fillRect(0, 0, baseW, headerH);
+    ctx.fillStyle = '#111111';
+    ctx.fillRect(0, 0, baseW, 68);
 
-    // شعار Syria • SheIn (يمين)
-    ctx.textAlign = 'right';
-    ctx.font = `900 36px ${fontBold}`;
+    // شعار Syria • SheIn
+    ctx.font = `900 21px ${fontBold}`;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('Syria ', baseW - 50, 68);
-    const syriaW = ctx.measureText('Syria ').width;
+    ctx.fillText('Syria ', 25, 42);
+    const syriaWidth = ctx.measureText('Syria ').width;
 
     ctx.fillStyle = '#d4b46a';
-    ctx.fillText('•', baseW - 50 - syriaW, 68);
-    const dotW = ctx.measureText('• ').width;
+    ctx.fillText('•', 25 + syriaWidth, 42);
+    const dotWidth = ctx.measureText('• ').width;
 
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(' SheIn', baseW - 50 - syriaW - dotW, 68);
+    ctx.fillText(' SheIn', 25 + syriaWidth + dotWidth, 42);
 
-    // كود المنتج (Product Code Pill) (يسار)
+    // كود المنتج (Product Code Pill)
     if (shein && shein !== '-') {
-      ctx.textAlign = 'center';
-      ctx.font = `700 28px ${fontBold}`;
+      ctx.font = `600 16px ${fontBold}`;
       const codeText = String(shein);
       const textW = ctx.measureText(codeText).width;
-      const pillW = textW + 48;
-      const pillH = 54;
-      const pillX = 50;
-      const pillY = 28;
+      const pillW = textW + 24;
+      const pillH = 32;
+      const pillX = baseW - 25 - pillW;
+      const pillY = 18;
 
-      ctx.fillStyle = '#222222';
-      ctx.strokeStyle = '#d4b46a';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#555555';
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.roundRect(pillX, pillY, pillW, pillH, 27);
-      ctx.fill();
+      ctx.roundRect(pillX, pillY, pillW, pillH, 16);
       ctx.stroke();
 
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(codeText, pillX + (pillW / 2), pillY + 38);
+      ctx.textAlign = 'center';
+      ctx.fillText(codeText, pillX + (pillW / 2), pillY + 22);
+      ctx.textAlign = 'left';
     }
 
-    let currentY = headerH + 35;
+    // 4. جانب الصورة (IMAGE SIDE - 410px)
+    const imgSideW = 410;
+    const imgX = 16;
+    const imgY = 68 + 16;
+    const imgW = imgSideW - 32; // 378px
+    const imgH = baseH - 68 - 32; // 500px
 
-    // 4. عنوان المنتج (TITLE)
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#f0f0f0';
-    ctx.font = `700 34px ${fontBold}`;
+    ctx.fillStyle = '#e9e7e2';
+    ctx.fillRect(imgX, imgY, imgW, imgH);
 
-    const titleLines = wrapText(ctx, title, baseW - 100).slice(0, 2);
-    titleLines.forEach(line => {
-      ctx.fillText(line, baseW / 2, currentY);
-      currentY += 46;
-    });
-
-    currentY += 15;
-
-    // 5. صورة المنتج الطولية (PRODUCT IMAGE - 450x599)
-    const imgW = 880;
-    const imgH = 900;
-    const imgX = (baseW - imgW) / 2;
-    const imgY = currentY;
-
-    // خلفية مخصصة للصورة
-    ctx.fillStyle = '#1c1c1c';
-    ctx.beginPath();
-    ctx.roundRect(imgX, imgY, imgW, imgH, 24);
-    ctx.fill();
-
+    // جلب الصورة بأمان وتحويل AVIF إلى JPG تلقائياً
     if (imageUrl) {
       try {
         const cleanImageUrl = imageUrl
@@ -205,101 +192,253 @@ export default async function handler(req, res) {
         if (imgRes.ok) {
           const imgBuffer = Buffer.from(await imgRes.arrayBuffer());
           const img = await loadImage(imgBuffer);
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.roundRect(imgX, imgY, imgW, imgH, 24);
-          ctx.clip();
           drawImageCover(ctx, img, imgX, imgY, imgW, imgH);
-          ctx.restore();
+        } else {
+          // تجربة الرابط الأصلي كاحتياط
+          const fallbackRes = await fetch(imageUrl);
+          if (fallbackRes.ok) {
+            const imgBuffer = Buffer.from(await fallbackRes.arrayBuffer());
+            const img = await loadImage(imgBuffer);
+            drawImageCover(ctx, img, imgX, imgY, imgW, imgH);
+          }
         }
       } catch (err) {
-        console.error('خطأ تحميل الصورة:', err.message);
+        console.error('خطأ جلب الصورة:', err.message);
       }
     }
 
-    // إطار رفيع حول الصورة
-    ctx.strokeStyle = 'rgba(212, 180, 106, 0.4)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(imgX, imgY, imgW, imgH, 24);
-    ctx.stroke();
+    // الإطار الداخلي الأنيق للصورة
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(imgX + 10, imgY + 10, imgW - 20, imgH - 20);
 
-    currentY += imgH + 30;
+    // 5. جانب البيانات (INFO SIDE)
+    const rightMargin = baseW - 18; // 682px
+    const boxW = 244;
+    const boxX = rightMargin - boxW;
+    let currentY = 68 + 18;
 
-    // 6. صندوق السعر والكود (PRICE CARD)
-    const cardW = 880;
-    const cardX = (baseW - cardW) / 2;
-
-    const priceBoxH = 95;
-    ctx.fillStyle = '#181818';
-    ctx.strokeStyle = '#333333';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(cardX, currentY, cardW, priceBoxH, 20);
-    ctx.fill();
-    ctx.stroke();
-
-    // نص السعر بالداخل
     ctx.textAlign = 'right';
+
+    // عنوان المنتج (التكفيل التلقائي بالأسطر)
+    ctx.fillStyle = '#161616';
+    ctx.font = `600 13px ${fontBold}`;
+
+    const titleLines = wrapText(ctx, title, boxW).slice(0, 3);
+
+    let titleY = currentY + 12;
+    titleLines.forEach((line) => {
+      ctx.fillText(line, rightMargin, titleY);
+      titleY += 18;
+    });
+
+    currentY = titleY + 4;
+
+    // الخط الذهبي
+    ctx.fillStyle = '#d4b46a';
+    ctx.fillRect(rightMargin - 45, currentY, 45, 3);
+    currentY += 14;
+
+    // صندوق السعر
+    const priceBoxH = 60;
+    ctx.fillStyle = '#111111';
+    ctx.beginPath();
+    ctx.roundRect(boxX, currentY, boxW, priceBoxH, 14);
+    ctx.fill();
+
     ctx.fillStyle = '#aaaaaa';
-    ctx.font = `400 22px ${fontReg}`;
-    ctx.fillText('السعر', cardX + cardW - 35, currentY + 38);
+    ctx.font = `400 10px ${fontReg}`;
+    ctx.fillText('السعر', rightMargin - 15, currentY + 18);
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = `900 44px ${fontBold}`;
-    ctx.fillText(String(price), cardX + cardW - 35, currentY + 76);
+    ctx.font = `900 24px ${fontBold}`;
+    ctx.fillText(String(price), rightMargin - 15, currentY + 46);
 
-    const priceW = ctx.measureText(String(price)).width;
+    const priceTextW = ctx.measureText(String(price)).width;
     ctx.fillStyle = '#d4b46a';
-    ctx.font = `700 24px ${fontBold}`;
-    ctx.fillText('ل.س', cardX + cardW - 45 - priceW, currentY + 74);
+    ctx.font = `600 12px ${fontBold}`;
+    ctx.fillText('ل.س', rightMargin - 20 - priceTextW, currentY + 46);
 
-    // كود المنتج المصغر على اليسار داخل الصندوق
-    ctx.textAlign = 'left';
-    ctx.fillStyle = '#888888';
-    ctx.font = `400 20px ${fontReg}`;
-    ctx.fillText('كود القطعة:', cardX + 35, currentY + 38);
+    currentY += priceBoxH + 10;
 
-    ctx.fillStyle = '#d4b46a';
-    ctx.font = `700 26px ${fontBold}`;
-    ctx.fillText(String(shein), cardX + 35, currentY + 74);
+    // صندوق المقاسات (ديناميكي ليتسع لأسطر متعددة)
+    ctx.font = `800 12px ${fontBold}`;
+    const sizeLines = wrapText(ctx, String(sizes), boxW - 22);
+    const sizeLineHeight = 16;
+    const sizeBoxH = 24 + (sizeLines.length * sizeLineHeight) + 6;
 
-    currentY += priceBoxH + 20;
-
-    // 7. صندوق المقاسات والألوان (SIZES & COLORS)
-    const optionsBoxH = 120;
-    ctx.fillStyle = '#141414';
-    ctx.strokeStyle = '#262626';
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#e6e3dc';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(cardX, currentY, cardW, optionsBoxH, 20);
+    ctx.roundRect(boxX, currentY, boxW, sizeBoxH, 12);
     ctx.fill();
     ctx.stroke();
 
-    ctx.textAlign = 'right';
+    ctx.fillStyle = '#999999';
+    ctx.font = `400 9px ${fontReg}`;
+    ctx.fillText('المقاسات المتوفرة', rightMargin - 11, currentY + 16);
 
-    // المقاسات
-    ctx.fillStyle = '#888888';
-    ctx.font = `400 20px ${fontReg}`;
-    ctx.fillText('المقاسات المتوفرة:', cardX + cardW - 30, currentY + 42);
+    ctx.fillStyle = '#222222';
+    ctx.font = `800 12px ${fontBold}`;
+    let sizeY = currentY + 32;
+    sizeLines.forEach(line => {
+      ctx.fillText(line, rightMargin - 11, sizeY);
+      sizeY += sizeLineHeight;
+    });
 
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `700 24px ${fontBold}`;
-    ctx.fillText(String(sizes), cardX + cardW - 200, currentY + 42);
+    currentY += sizeBoxH + 8;
 
-    // الألوان
-    ctx.fillStyle = '#888888';
-    ctx.font = `400 20px ${fontReg}`;
-    ctx.fillText('الألوان المتوفرة:', cardX + cardW - 30, currentY + 90);
+    // صندوق الألوان (دوائر متعددة وربط تلفيف لأسماء الألوان)
+    const hasColors = colorsText && colorsText !== 'لون واحد' && colorsText !== 'غير متوفر';
+
+    if (hasColors) {
+      const colorsList = colorsText.split('-').map(x => x.trim()).filter(Boolean);
+      const maxDotsPerRow = 8;
+      const numColorRows = Math.ceil(colorsList.length / maxDotsPerRow);
+
+      ctx.font = `600 8px ${fontReg}`;
+      const colorTextLines = wrapText(ctx, colorsText, boxW - 22);
+
+      const dotRowHeight = 22;
+      const textLineHeight = 12;
+      const colorBoxH = 22 + (numColorRows * dotRowHeight) + (colorTextLines.length * textLineHeight) + 8;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#e6e3dc';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(boxX, currentY, boxW, colorBoxH, 12);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#888888';
+      ctx.font = `600 8px ${fontReg}`;
+      ctx.fillText('الألوان المتوفرة', rightMargin - 11, currentY + 15);
+
+      let dotY = currentY + 30;
+      for (let r = 0; r < numColorRows; r++) {
+        const rowColors = colorsList.slice(r * maxDotsPerRow, (r + 1) * maxDotsPerRow);
+        let dotX = rightMargin - 22;
+
+        rowColors.forEach(name => {
+          const firstWord = name.split(' ')[0];
+          const hex = colorMap[firstWord] || colorMap[name] || '#999999';
+
+          ctx.save();
+          ctx.fillStyle = hex;
+          ctx.beginPath();
+          ctx.arc(dotX, dotY, 8, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+
+          ctx.strokeStyle = '#cfcfcf';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.restore();
+
+          dotX -= 22;
+        });
+
+        dotY += dotRowHeight;
+      }
+
+      let textY = currentY + 22 + (numColorRows * dotRowHeight) + 8;
+      ctx.fillStyle = '#888888';
+      ctx.font = `600 8px ${fontReg}`;
+
+      colorTextLines.forEach(line => {
+        ctx.fillText(line, rightMargin - 11, textY);
+        textY += textLineHeight;
+      });
+
+      currentY += colorBoxH + 8;
+    } else {
+      const colorBoxH = 46;
+      ctx.fillStyle = '#ffffff';
+      ctx.strokeStyle = '#e6e3dc';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.roundRect(boxX, currentY, boxW, colorBoxH, 12);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#888888';
+      ctx.font = `600 8px ${fontReg}`;
+      ctx.fillText('الألوان المتوفرة', rightMargin - 11, currentY + 15);
+
+      ctx.fillStyle = '#222222';
+      ctx.font = `800 12px ${fontBold}`;
+      ctx.fillText(colorsText || '-', rightMargin - 11, currentY + 34);
+
+      currentY += colorBoxH + 8;
+    }
+
+    // صندوق التفاصيل والمواصفات (ATTRIBUTES BOX - تلفيف تلقائي ديناميكي لكل سطر)
+    if (attributesText) {
+      const rawLines = attributesText.split(/\r\n|\r|\n/).map(x => x.trim().replace(/^•\s*/, '')).filter(Boolean);
+
+      ctx.font = `400 9px ${fontReg}`;
+      const allAttrLines = [];
+      rawLines.forEach(raw => {
+        const wrapped = wrapText(ctx, raw, boxW - 24);
+        allAttrLines.push(...wrapped);
+      });
+
+      const attrLineHeight = 14;
+      const attrBoxH = 24 + (allAttrLines.length * attrLineHeight) + 6;
+
+      ctx.fillStyle = '#eeece6';
+      ctx.beginPath();
+      ctx.roundRect(boxX, currentY, boxW, attrBoxH, 12);
+      ctx.fill();
+
+      ctx.fillStyle = '#222222';
+      ctx.font = `900 10px ${fontBold}`;
+      ctx.fillText('تفاصيل المنتج', rightMargin - 12, currentY + 16);
+
+      let lineY = currentY + 30;
+      ctx.font = `400 9px ${fontReg}`;
+      ctx.fillStyle = '#666666';
+
+      allAttrLines.forEach((line) => {
+        ctx.fillText(line, rightMargin - 12, lineY);
+        lineY += attrLineHeight;
+      });
+    }
+
+    // الفوتر (FOOTER)
+    const footerY = baseH - 20;
+    ctx.strokeStyle = '#ddd9d0';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(boxX, footerY - 12);
+    ctx.lineTo(rightMargin, footerY - 12);
+    ctx.stroke();
+
+    // Brand
+    ctx.textAlign = 'left';
+    ctx.font = `900 11px ${fontBold}`;
+    ctx.fillStyle = '#111111';
+    ctx.fillText('SheIn ', boxX, footerY);
+    const sheinW = ctx.measureText('SheIn ').width;
 
     ctx.fillStyle = '#d4b46a';
-    ctx.font = `700 22px ${fontBold}`;
-    ctx.fillText(colorsText || 'متعدد الألوان', cardX + cardW - 180, currentY + 90);
+    ctx.fillText('•', boxX + sheinW, footerY);
+    const dotW2 = ctx.measureText('• ').width;
 
-    // 8. الهامش السفلي الآمن (SAFE ZONE FOR REELS)
-    // نترك المساحة المتبقية ($340\text{px}$) فارغة ونظيفة لمنع التداخل مع واجهة تطبيقات التواصل
-    
+    ctx.fillStyle = '#111111';
+    ctx.fillText(' Syria', boxX + sheinW + dotW2, footerY);
+
+    // Text Right
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#999999';
+    ctx.font = `400 8px ${fontReg}`;
+    ctx.fillText('اطلبها بسهولة واستلمها عندك', rightMargin, footerY);
+
     // تصدير الصورة بجودة PNG عالية
     const imageBuffer = canvas.toBuffer('image/png');
     res.setHeader('Content-Type', 'image/png');
