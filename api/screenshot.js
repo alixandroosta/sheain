@@ -55,7 +55,7 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
-// خريطة الألوان المطابقة للسكربت في تصميمك
+// خريطة الألوان المطابقة للسكربت
 const colorMap = {
   'وردي فاتح': '#f8bbd0', 'ذهبي': '#d4b46a', 'فضي': '#c0c0c0',
   "أحمر": "#FF3B30", "احمر": "#FF3B30", "أزرق": "#007AFF", "ازرق": "#007AFF", 
@@ -215,7 +215,6 @@ export default async function handler(req, res) {
           ctx.roundRect(imgX, imgY, imgW, imgH, 12);
           ctx.clip();
           
-          // رسم الصورة كاملة باستخدام Contain
           drawImageContain(ctx, img, imgX, imgY, imgW, imgH);
           ctx.restore();
         }
@@ -263,18 +262,21 @@ export default async function handler(req, res) {
 
     currentY += priceBoxH + 12;
 
-    // 6. صناديق المقاسات والألوان المتجاورة
+    // 6. صناديق المقاسات والألوان المتجاورة ديناميكياً
     const gap = 12;
     const subBoxW = (imgW - gap) / 2;
-    const boxH = 70;
+    const hasColors = colorsText && colorsText !== 'لون واحد' && colorsText !== 'غير متوفر';
 
-    // --- الألوان (يمين) - مع رسم دوائر الألوان الملونة ---
+    // حساب الارتفاع الديناميكي للصندوقين بناءً على وجود نص أسفل الألوان
+    const dynamicBoxH = hasColors ? 82 : 70;
+
+    // --- صندوق الألوان (يمين) ---
     const colorsBoxX = margin + subBoxW + gap;
     ctx.fillStyle = '#1e1e1e';
     ctx.strokeStyle = '#2c2c2c';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(colorsBoxX, currentY, subBoxW, boxH, 10);
+    ctx.roundRect(colorsBoxX, currentY, subBoxW, dynamicBoxH, 10);
     ctx.fill();
     ctx.stroke();
 
@@ -283,8 +285,6 @@ export default async function handler(req, res) {
     ctx.font = `400 10px ${fontReg}`;
     ctx.fillText('الألوان المتوفرة', colorsBoxX + (subBoxW / 2), currentY + 18);
 
-    const hasColors = colorsText && colorsText !== 'لون واحد' && colorsText !== 'غير متوفر';
-
     if (hasColors) {
       const colorsList = colorsText.split('-').map(x => x.trim()).filter(Boolean);
       const maxDots = 5;
@@ -292,8 +292,9 @@ export default async function handler(req, res) {
       
       const totalWidth = displayColors.length * 20;
       let startX = colorsBoxX + (subBoxW / 2) + (totalWidth / 2) - 10;
-      const dotY = currentY + 44;
+      const dotY = currentY + 38;
 
+      // رسم دوائر الألوان
       displayColors.forEach(name => {
         const firstWord = name.split(' ')[0];
         const hex = colorMap[firstWord] || colorMap[name] || '#888888';
@@ -301,7 +302,7 @@ export default async function handler(req, res) {
         ctx.save();
         ctx.fillStyle = hex;
         ctx.beginPath();
-        ctx.arc(startX, dotY, 7, 0, Math.PI * 2);
+        ctx.arc(startX, dotY, 6.5, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.strokeStyle = '#1e1e1e';
@@ -315,19 +316,25 @@ export default async function handler(req, res) {
 
         startX -= 20;
       });
+
+      // رسم نص أسماء الألوان تحت الدوائر
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 11px ${fontBold}`;
+      const shortColorsText = colorsList.join(' - ');
+      ctx.fillText(shortColorsText, colorsBoxX + (subBoxW / 2), currentY + 64);
     } else {
       ctx.fillStyle = '#ffffff';
       ctx.font = `700 11px ${fontBold}`;
       ctx.fillText(colorsText || 'لون واحد', colorsBoxX + (subBoxW / 2), currentY + 46);
     }
 
-    // --- المقاسات (يسار) ---
+    // --- صندوق المقاسات (يسار) - يتمدد تلقائياً بنفس ارتفاع صندوق الألوان ---
     const sizesBoxX = margin;
     ctx.fillStyle = '#1e1e1e';
     ctx.strokeStyle = '#2c2c2c';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(sizesBoxX, currentY, subBoxW, boxH, 10);
+    ctx.roundRect(sizesBoxX, currentY, subBoxW, dynamicBoxH, 10);
     ctx.fill();
     ctx.stroke();
 
@@ -337,9 +344,11 @@ export default async function handler(req, res) {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = `800 12px ${fontBold}`;
-    ctx.fillText(String(sizes), sizesBoxX + (subBoxW / 2), currentY + 46);
+    // توشيط نص المقاس عمودياً بناءً على الارتفاع الجديد
+    const sizesYPos = hasColors ? currentY + 52 : currentY + 46;
+    ctx.fillText(String(sizes), sizesBoxX + (subBoxW / 2), sizesYPos);
 
-    currentY += boxH + 12;
+    currentY += dynamicBoxH + 12;
 
     // 7. صندوق التفاصيل
     const attrBoxH = 50;
