@@ -372,7 +372,7 @@ export default async function handler(req, res) {
     ctx.textAlign = 'left';
     ctx.font = `900 11px ${fontBold}`;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('SheIn ', margin, footerY);
+    ctx.fillText('  ', margin, footerY);
     const fSheinW = ctx.measureText('SheIn ').width;
 
     ctx.fillStyle = '#d4b46a';
@@ -380,12 +380,12 @@ export default async function handler(req, res) {
     const fDotW = ctx.measureText('• ').width;
 
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(' Syria', margin + fSheinW + fDotW, footerY);
+    ctx.fillText('  ', margin + fSheinW + fDotW, footerY);
 
     ctx.textAlign = 'right';
     ctx.fillStyle = '#888888';
     ctx.font = `400 10px ${fontReg}`;
-    ctx.fillText('اطلبها بسهولة واستلمها عندك', baseW - margin, footerY);
+    ctx.fillText('  ', baseW - margin, footerY);
 
     // تصدير الصورة
     const imageBuffer = canvas.toBuffer('image/png');
