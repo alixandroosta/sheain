@@ -150,7 +150,7 @@ export default async function handler(req, res) {
     ctx.fillStyle = '#ffffff';
     ctx.fillText(' SheIn', 20 + syriaWidth + dotWidth, 34);
 
-    // رقم المنتج
+    // رقم المنتج (تم تكبير الخط وجعل الإطار باللون الذهبي)
     if (shortCode && shortCode !== '-') {
       ctx.textAlign = 'right';
       ctx.font = `600 13px ${fontBold}`;
@@ -159,25 +159,27 @@ export default async function handler(req, res) {
       const labelW = ctx.measureText('رقم المنتج').width;
 
       const spacedCode = shortCode.split('').join(' ');
-      ctx.font = `900 14px ${fontBold}`;
+      // تكبير حجم الخط الخاص بالكود من 14px إلى 17px
+      ctx.font = `900 17px ${fontBold}`;
       const codeW = ctx.measureText(spacedCode).width;
 
-      const pillW = codeW + 20;
-      const pillH = 30;
+      const pillW = codeW + 24;
+      const pillH = 34;
       const pillX = baseW - 25 - labelW - pillW;
-      const pillY = 12;
+      const pillY = 10;
 
       ctx.fillStyle = '#2a2a2a';
-      ctx.strokeStyle = '#3d3d3d';
-      ctx.lineWidth = 1;
+      // تغيير لون الإطار (Border) إلى الذهبي وتكبير سمكه قليلاً
+      ctx.strokeStyle = '#d4b46a';
+      ctx.lineWidth = 1.5;
       ctx.beginPath();
-      ctx.roundRect(pillX, pillY, pillW, pillH, 15);
+      ctx.roundRect(pillX, pillY, pillW, pillH, 17);
       ctx.fill();
       ctx.stroke();
 
       ctx.fillStyle = '#ffffff';
       ctx.textAlign = 'center';
-      ctx.fillText(spacedCode, pillX + (pillW / 2), pillY + 20);
+      ctx.fillText(spacedCode, pillX + (pillW / 2), pillY + 23);
     }
 
     let currentY = 70;
@@ -267,7 +269,6 @@ export default async function handler(req, res) {
     const subBoxW = (imgW - gap) / 2;
     const hasColors = colorsText && colorsText !== 'لون واحد' && colorsText !== 'غير متوفر';
 
-    // حساب الارتفاع الديناميكي للصندوقين بناءً على وجود نص أسفل الألوان
     const dynamicBoxH = hasColors ? 82 : 70;
 
     // --- صندوق الألوان (يمين) ---
@@ -294,7 +295,6 @@ export default async function handler(req, res) {
       let startX = colorsBoxX + (subBoxW / 2) + (totalWidth / 2) - 10;
       const dotY = currentY + 38;
 
-      // رسم دوائر الألوان
       displayColors.forEach(name => {
         const firstWord = name.split(' ')[0];
         const hex = colorMap[firstWord] || colorMap[name] || '#888888';
@@ -317,7 +317,6 @@ export default async function handler(req, res) {
         startX -= 20;
       });
 
-      // رسم نص أسماء الألوان تحت الدوائر
       ctx.fillStyle = '#ffffff';
       ctx.font = `700 11px ${fontBold}`;
       const shortColorsText = colorsList.join(' - ');
@@ -328,7 +327,7 @@ export default async function handler(req, res) {
       ctx.fillText(colorsText || 'لون واحد', colorsBoxX + (subBoxW / 2), currentY + 46);
     }
 
-    // --- صندوق المقاسات (يسار) - يتمدد تلقائياً بنفس ارتفاع صندوق الألوان ---
+    // --- صندوق المقاسات (يسار) ---
     const sizesBoxX = margin;
     ctx.fillStyle = '#1e1e1e';
     ctx.strokeStyle = '#2c2c2c';
@@ -344,7 +343,6 @@ export default async function handler(req, res) {
 
     ctx.fillStyle = '#ffffff';
     ctx.font = `800 12px ${fontBold}`;
-    // توشيط نص المقاس عمودياً بناءً على الارتفاع الجديد
     const sizesYPos = hasColors ? currentY + 52 : currentY + 46;
     ctx.fillText(String(sizes), sizesBoxX + (subBoxW / 2), sizesYPos);
 
