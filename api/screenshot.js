@@ -150,7 +150,7 @@ export default async function handler(req, res) {
     ctx.fillStyle = '#ffffff';
     ctx.fillText(' SheIn', 20 + syriaWidth + dotWidth, 34);
 
-    // رقم المنتج (تم تكبير الخط وجعل الإطار باللون الذهبي)
+    // رقم المنتج
     if (shortCode && shortCode !== '-') {
       ctx.textAlign = 'right';
       ctx.font = `600 13px ${fontBold}`;
@@ -159,7 +159,6 @@ export default async function handler(req, res) {
       const labelW = ctx.measureText('رقم المنتج').width;
 
       const spacedCode = shortCode.split('').join(' ');
-      // تكبير حجم الخط الخاص بالكود من 14px إلى 17px
       ctx.font = `900 17px ${fontBold}`;
       const codeW = ctx.measureText(spacedCode).width;
 
@@ -169,7 +168,6 @@ export default async function handler(req, res) {
       const pillY = 10;
 
       ctx.fillStyle = '#2a2a2a';
-      // تغيير لون الإطار (Border) إلى الذهبي وتكبير سمكه قليلاً
       ctx.strokeStyle = '#d4b46a';
       ctx.lineWidth = 1.5;
       ctx.beginPath();
@@ -184,14 +182,13 @@ export default async function handler(req, res) {
 
     let currentY = 70;
 
-    // 3. صورة المنتج (تظهر بالكامل بدون أي اقتطاع)
+    // 3. صورة المنتج
     const margin = 20;
     const imgW = baseW - (margin * 2);
     const imgH = 460;
     const imgX = margin;
     const imgY = currentY;
 
-    // خلفية حقل الصورة
     ctx.fillStyle = '#1a1a1a';
     ctx.beginPath();
     ctx.roundRect(imgX, imgY, imgW, imgH, 12);
@@ -264,14 +261,38 @@ export default async function handler(req, res) {
 
     currentY += priceBoxH + 12;
 
-    // 6. صناديق المقاسات والألوان المتجاورة ديناميكياً
+    // 6. تجهيز بيانات الألوان والمقاسات للتثبيت الملتف (Flex-Wrap Grid)
     const gap = 12;
     const subBoxW = (imgW - gap) / 2;
+    const paddingX = 10;
+    const usableW = subBoxW - (paddingX * 2);
+
+    // --- تلفيف المقاسات ---
+    const sizeList = String(sizes).split(/[-,\/\s]+/).map(s => s.trim()).filter(Boolean);
+    ctx.font = `800 12px ${fontBold}`;
+    const sizeLines = wrapText(ctx, sizeList.join(' - '), usableW);
+
+    // --- تلفيف الألوان (نص + دوائر) ---
     const hasColors = colorsText && colorsText !== 'لون واحد' && colorsText !== 'غير متوفر';
+    let colorLines = [];
+    let dotRowsCount = 1;
 
-    const dynamicBoxH = hasColors ? 82 : 70;
+    if (hasColors) {
+      ctx.font = `700 11px ${fontBold}`;
+      colorLines = wrapText(ctx, colorsText, usableW);
 
-    // --- صندوق الألوان (يمين) ---
+      const colorsList = colorsText.split('-').map(x => x.trim()).filter(Boolean);
+      const dotsPerRow = Math.floor(usableW / 18);
+      dotRowsCount = Math.ceil(colorsList.length / dotsPerRow) || 1;
+    }
+
+    // حساب الارتفاع الموحد للصندوقين ديناميكياً
+    const sizesContentH = sizeLines.length * 16;
+    const colorsContentH = hasColors ? (dotRowsCount * 18) + (colorLines.length * 14) + 6 : 20;
+
+    const dynamicBoxH = Math.max(70, 35 + Math.max(sizesContentH, colorsContentH));
+
+    // --- رسم صندوق الألوان (يمين) ---
     const colorsBoxX = margin + subBoxW + gap;
     ctx.fillStyle = '#1e1e1e';
     ctx.strokeStyle = '#2c2c2c';
@@ -288,46 +309,55 @@ export default async function handler(req, res) {
 
     if (hasColors) {
       const colorsList = colorsText.split('-').map(x => x.trim()).filter(Boolean);
-      const maxDots = 5;
-      const displayColors = colorsList.slice(0, maxDots);
-      
-      const totalWidth = displayColors.length * 20;
-      let startX = colorsBoxX + (subBoxW / 2) + (totalWidth / 2) - 10;
-      const dotY = currentY + 38;
+      const dotsPerRow = Math.floor(usableW / 18);
+      let dotY = currentY + 34;
 
-      displayColors.forEach(name => {
-        const firstWord = name.split(' ')[0];
-        const hex = colorMap[firstWord] || colorMap[name] || '#888888';
+      // رسم دوائر الألوان الملتفة على أسطر متعددة
+      for (let i = 0; i < colorsList.length; i += dotsPerRow) {
+        const rowColors = colorsList.slice(i, i + dotsPerRow);
+        const rowWidth = rowColors.length * 18;
+        let startX = colorsBoxX + (subBoxW / 2) + (rowWidth / 2) - 9;
 
-        ctx.save();
-        ctx.fillStyle = hex;
-        ctx.beginPath();
-        ctx.arc(startX, dotY, 6.5, 0, Math.PI * 2);
-        ctx.fill();
+        rowColors.forEach(name => {
+          const firstWord = name.split(' ')[0];
+          const hex = colorMap[firstWord] || colorMap[name] || '#888888';
 
-        ctx.strokeStyle = '#1e1e1e';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+          ctx.save();
+          ctx.fillStyle = hex;
+          ctx.beginPath();
+          ctx.arc(startX, dotY, 6, 0, Math.PI * 2);
+          ctx.fill();
 
-        ctx.strokeStyle = '#444444';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.restore();
+          ctx.strokeStyle = '#1e1e1e';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
 
-        startX -= 20;
-      });
+          ctx.strokeStyle = '#444444';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          ctx.restore();
 
+          startX -= 18;
+        });
+
+        dotY += 16;
+      }
+
+      // رسم الأسطر الملتفة لأسماء الألوان
       ctx.fillStyle = '#ffffff';
       ctx.font = `700 11px ${fontBold}`;
-      const shortColorsText = colorsList.join(' - ');
-      ctx.fillText(shortColorsText, colorsBoxX + (subBoxW / 2), currentY + 64);
+      let textY = dotY + 4;
+      colorLines.forEach(line => {
+        ctx.fillText(line, colorsBoxX + (subBoxW / 2), textY);
+        textY += 14;
+      });
     } else {
       ctx.fillStyle = '#ffffff';
       ctx.font = `700 11px ${fontBold}`;
-      ctx.fillText(colorsText || 'لون واحد', colorsBoxX + (subBoxW / 2), currentY + 46);
+      ctx.fillText(colorsText || 'لون واحد', colorsBoxX + (subBoxW / 2), currentY + (dynamicBoxH / 2) + 10);
     }
 
-    // --- صندوق المقاسات (يسار) ---
+    // --- رسم صندوق المقاسات (يسار) ---
     const sizesBoxX = margin;
     ctx.fillStyle = '#1e1e1e';
     ctx.strokeStyle = '#2c2c2c';
@@ -341,10 +371,14 @@ export default async function handler(req, res) {
     ctx.font = `400 10px ${fontReg}`;
     ctx.fillText('المقاسات المتوفرة', sizesBoxX + (subBoxW / 2), currentY + 18);
 
+    // رسم المقاسات الملتفة على أسطر متتالية
     ctx.fillStyle = '#ffffff';
     ctx.font = `800 12px ${fontBold}`;
-    const sizesYPos = hasColors ? currentY + 52 : currentY + 46;
-    ctx.fillText(String(sizes), sizesBoxX + (subBoxW / 2), sizesYPos);
+    let sizeYPos = currentY + 38;
+    sizeLines.forEach(line => {
+      ctx.fillText(line, sizesBoxX + (subBoxW / 2), sizeYPos);
+      sizeYPos += 16;
+    });
 
     currentY += dynamicBoxH + 12;
 
@@ -372,7 +406,7 @@ export default async function handler(req, res) {
     ctx.textAlign = 'left';
     ctx.font = `900 11px ${fontBold}`;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('  ', margin, footerY);
+    ctx.fillText('SheIn ', margin, footerY);
     const fSheinW = ctx.measureText('SheIn ').width;
 
     ctx.fillStyle = '#d4b46a';
@@ -380,12 +414,12 @@ export default async function handler(req, res) {
     const fDotW = ctx.measureText('• ').width;
 
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('  ', margin + fSheinW + fDotW, footerY);
+    ctx.fillText(' Syria', margin + fSheinW + fDotW, footerY);
 
     ctx.textAlign = 'right';
     ctx.fillStyle = '#888888';
     ctx.font = `400 10px ${fontReg}`;
-    ctx.fillText('  ', baseW - margin, footerY);
+    ctx.fillText('اطلبها بسهولة واستلمها عندك', baseW - margin, footerY);
 
     // تصدير الصورة
     const imageBuffer = canvas.toBuffer('image/png');
