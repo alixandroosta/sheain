@@ -108,12 +108,12 @@ export default async function handler(req, res) {
     const ctx = canvas.getContext('2d');
     ctx.scale(scale, scale);
 
-    // خلفية البطاقة
-    ctx.fillStyle = '#faf8f5';
+    // 1. خلفية البطاقة الأساسية (الرمادي الداكن المطفأ)
+    ctx.fillStyle = '#121212';
     ctx.fillRect(0, 0, baseW, baseH);
 
-    // 1. الهيدر (HEADER)
-    ctx.fillStyle = '#111111';
+    // 2. الهيدر (HEADER)
+    ctx.fillStyle = '#1e1e1e';
     ctx.fillRect(0, 0, baseW, 55);
 
     // شعار Syria • SheIn
@@ -147,8 +147,8 @@ export default async function handler(req, res) {
       const pillX = baseW - 25 - labelW - pillW;
       const pillY = 12;
 
-      ctx.fillStyle = '#222222';
-      ctx.strokeStyle = '#333333';
+      ctx.fillStyle = '#2a2a2a';
+      ctx.strokeStyle = '#3d3d3d';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.roundRect(pillX, pillY, pillW, pillH, 15);
@@ -162,7 +162,7 @@ export default async function handler(req, res) {
 
     let currentY = 70;
 
-    // 2. صورة المنتج (تظهر بالكامل بدون أي اقتطاع)
+    // 3. صورة المنتج (تظهر بالكامل بدون أي اقتطاع)
     const margin = 20;
     const imgW = baseW - (margin * 2);
     const imgH = 460;
@@ -170,7 +170,7 @@ export default async function handler(req, res) {
     const imgY = currentY;
 
     // خلفية حقل الصورة
-    ctx.fillStyle = '#f0eee8';
+    ctx.fillStyle = '#1a1a1a';
     ctx.beginPath();
     ctx.roundRect(imgX, imgY, imgW, imgH, 12);
     ctx.fill();
@@ -204,7 +204,7 @@ export default async function handler(req, res) {
       }
     }
 
-    ctx.strokeStyle = '#e0ded8';
+    ctx.strokeStyle = '#2a2a2a';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(imgX, imgY, imgW, imgH, 12);
@@ -212,9 +212,9 @@ export default async function handler(req, res) {
 
     currentY += imgH + 15;
 
-    // 3. عنوان المنتج
+    // 4. عنوان المنتج
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#111111';
+    ctx.fillStyle = '#ffffff';
     ctx.font = `700 15px ${fontBold}`;
 
     const titleLines = wrapText(ctx, title, imgW - 20).slice(0, 2);
@@ -225,15 +225,15 @@ export default async function handler(req, res) {
 
     currentY += 10;
 
-    // 4. صندوق السعر
+    // 5. صندوق السعر
     const priceBoxH = 50;
-    ctx.fillStyle = '#111111';
+    ctx.fillStyle = '#1e1e1e';
     ctx.beginPath();
     ctx.roundRect(margin, currentY, imgW, priceBoxH, 10);
     ctx.fill();
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#888888';
+    ctx.fillStyle = '#aaaaaa';
     ctx.font = `400 9px ${fontReg}`;
     ctx.fillText('السعر', baseW / 2, currentY + 14);
 
@@ -243,15 +243,15 @@ export default async function handler(req, res) {
 
     currentY += priceBoxH + 12;
 
-    // 5. صناديق المقاسات والألوان المتجاورة
+    // 6. صناديق المقاسات والألوان المتجاورة
     const gap = 12;
     const subBoxW = (imgW - gap) / 2;
     const boxH = 70;
 
     // الألوان (يمين)
     const colorsBoxX = margin + subBoxW + gap;
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#e8e6e1';
+    ctx.fillStyle = '#1e1e1e';
+    ctx.strokeStyle = '#2c2c2c';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(colorsBoxX, currentY, subBoxW, boxH, 10);
@@ -259,59 +259,59 @@ export default async function handler(req, res) {
     ctx.stroke();
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#999999';
+    ctx.fillStyle = '#aaaaaa';
     ctx.font = `400 10px ${fontReg}`;
     ctx.fillText('الألوان المتوفرة', colorsBoxX + (subBoxW / 2), currentY + 20);
 
-    ctx.fillStyle = '#222222';
+    ctx.fillStyle = '#ffffff';
     ctx.font = `700 11px ${fontBold}`;
     const displayColor = colorsText ? colorsText.split('-')[0].trim() : 'متعدد الألوان';
     ctx.fillText(displayColor, colorsBoxX + (subBoxW / 2), currentY + 48);
 
     // المقاسات (يسار)
     const sizesBoxX = margin;
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#e8e6e1';
+    ctx.fillStyle = '#1e1e1e';
+    ctx.strokeStyle = '#2c2c2c';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(sizesBoxX, currentY, subBoxW, boxH, 10);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#999999';
+    ctx.fillStyle = '#aaaaaa';
     ctx.font = `400 10px ${fontReg}`;
     ctx.fillText('المقاسات المتوفرة', sizesBoxX + (subBoxW / 2), currentY + 20);
 
-    ctx.fillStyle = '#111111';
+    ctx.fillStyle = '#ffffff';
     ctx.font = `800 12px ${fontBold}`;
     ctx.fillText(String(sizes), sizesBoxX + (subBoxW / 2), currentY + 48);
 
     currentY += boxH + 12;
 
-    // 6. صندوق التفاصيل
+    // 7. صندوق التفاصيل
     const attrBoxH = 50;
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#e8e6e1';
+    ctx.fillStyle = '#1e1e1e';
+    ctx.strokeStyle = '#2c2c2c';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(margin, currentY, imgW, attrBoxH, 10);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#111111';
+    ctx.fillStyle = '#ffffff';
     ctx.font = `700 11px ${fontBold}`;
     ctx.fillText('تفاصيل المنتج', baseW / 2, currentY + 20);
 
-    ctx.fillStyle = '#777777';
+    ctx.fillStyle = '#aaaaaa';
     ctx.font = `400 10px ${fontReg}`;
     ctx.fillText(attributesText || 'غير متوفر', baseW / 2, currentY + 38);
 
-    // 7. الفوتر السفلي
+    // 8. الفوتر السفلي
     const footerY = baseH - 30;
 
     ctx.textAlign = 'left';
     ctx.font = `900 11px ${fontBold}`;
-    ctx.fillStyle = '#111111';
+    ctx.fillStyle = '#ffffff';
     ctx.fillText('SheIn ', margin, footerY);
     const fSheinW = ctx.measureText('SheIn ').width;
 
@@ -319,11 +319,11 @@ export default async function handler(req, res) {
     ctx.fillText('•', margin + fSheinW, footerY);
     const fDotW = ctx.measureText('• ').width;
 
-    ctx.fillStyle = '#111111';
+    ctx.fillStyle = '#ffffff';
     ctx.fillText(' Syria', margin + fSheinW + fDotW, footerY);
 
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#aaaaaa';
+    ctx.fillStyle = '#888888';
     ctx.font = `400 10px ${fontReg}`;
     ctx.fillText('اطلبها بسهولة واستلمها عندك', baseW - margin, footerY);
 
