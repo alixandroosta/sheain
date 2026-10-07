@@ -44,14 +44,14 @@ export default async function handler(req, res) {
     if (!resAudio.ok) throw new Error(`فشل جلب ملف الصوت رقم ${randomNumber}`);
     fs.writeFileSync(tmpAudio.name, Buffer.from(await resAudio.arrayBuffer()));
 
-    // 3. معالجة الفيديو بالكامل عبر FFmpeg
+    // 3. معالجة الفيديو بواسطة FFmpeg
     await new Promise((resolve, reject) => {
       ffmpeg()
-        // المدخل 0: صورة السكرين شوت
+        // المدخل 0: صورة السكرين شوت (تستمر 4.8 ثانية لتغطية الترانزيشن)
         .input(tmpImgMain.name)
         .inputOptions(['-loop 1', '-t 4.8'])
 
-        // المدخل 1: الصورة العشوائية
+        // المدخل 1: الصورة العشوائية (1.5 ثانية)
         .input(tmpImgRandom.name)
         .inputOptions(['-loop 1', '-t 1.5'])
 
@@ -59,16 +59,16 @@ export default async function handler(req, res) {
         .input(tmpAudio.name)
 
         .complexFilter([
-          // تكبير الصورة الأولى لعرض الشاشة الكامل (1080px) وتوسيطها في إطار ريلز (1080x1920) بدون قص
-          '[0:v]scale=1080:-2,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p[v0]',
+          // تكبير الصورة الأولى لعرض 1080 وتوسيطها في إطار طولي 1080x1920
+          '[0:v]scale=1080:-1,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black,setsar=1,format=yuv420p[v0]',
           
-          // تكبير الصورة الثانية لعرض الشاشة الكامل (1080px) وتوسيطها في إطار ريلز (1080x1920) بدون قص
-          '[1:v]scale=1080:-2,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black,format=yuv420p[v1]',
+          // تكبير الصورة الثانية لعرض 1080 وتوسيطها في إطار طولي 1080x1920
+          '[1:v]scale=1080:-1,pad=1080:1920:(ow-iw)/2:(oh-ih)/2:black,setsar=1,format=yuv420p[v1]',
           
-          // دمج الصورتين بانتقال ناعم عند الثانية 4.5
+          // دمج الصورتين عبر xfade عند الثانية 4.5 بمدة 0.3 ثانية
           '[v0][v1]xfade=transition=fade:duration=0.3:offset=4.5[outv]',
 
-          // انخفاض الصوت تدريجياً من الثانية 5 إلى 6
+          // خفض الصوت تدريجياً (Fade Out) من الثانية 5 إلى 6
           '[2:a]afade=t=out:st=5:d=1[outa]'
         ])
         .outputOptions([
