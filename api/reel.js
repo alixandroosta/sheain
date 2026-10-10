@@ -22,7 +22,12 @@ export default async function handler(req, res) {
   }
 
   // 1. توليد رقم عشوائي بين 1 و 17
-  const randomNumber = Math.floor(Math.random() * 17) + 1;
+  const seconds = new Date().getSeconds(); // من 0 إلى 59
+
+// معادلة موزعة رياضياً لتقسيم الـ 60 ثانية على 17 رقم بالتساوي
+const randomNumber = Math.floor((seconds / 60) * 17) + 1;
+  
+  //const randomNumber = Math.floor(Math.random() * 17) + 1;
   const randomAudioUrl = `https://noqta.sy/song/${randomNumber}.mp3`;
   const randomImageUrl = `https://noqta.sy/song/${randomNumber}.jpg`;
 
